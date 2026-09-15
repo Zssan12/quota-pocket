@@ -489,7 +489,7 @@ def codex_native(config):
             if config.get('managed'): raise SourceError('独立 ChatGPT 登录已失效，请在电脑端点击“连接 ChatGPT 订阅”。')
             raise SourceError('当前 Codex 使用 API Key 或未登录订阅。请在“连接数据源”点击“连接 ChatGPT 订阅”独立授权；勾选采集开关不会完成登录。')
         payload = call('account/rateLimits/read', 3)
-        item = row('native:codex', 'ChatGPT 订阅', '独立订阅' if config.get('managed') else 'Codex CLI', 'codex', account.get('planType', ''))
+        item = row(config.get('providerId', 'native:codex'), config.get('name', 'ChatGPT 订阅'), '独立订阅' if config.get('managed') else 'Codex CLI', 'codex', account.get('planType', ''))
         buckets = payload.get('rateLimitsByLimitId') or {'codex': payload.get('rateLimits') or {}}
         for bucket, values in buckets.items():
             for key in ('primary', 'secondary'):
@@ -539,7 +539,7 @@ def claude_native(config):
         if config.get('managed') and error.status_code in (401,403):
             raise SourceError('独立 Claude 授权失效或权限不足，请在电脑端点击“连接 Claude 订阅”，无需更改 Claude Code。')
         raise
-    item = row('native:claude', 'Claude 订阅', '独立订阅' if config.get('managed') else 'Claude OAuth', 'claude')
+    item = row(config.get('providerId', 'native:claude'), config.get('name', 'Claude 订阅'), '独立订阅' if config.get('managed') else 'Claude OAuth', 'claude')
     for key, value in payload.items():
         if isinstance(value, dict) and (key == 'five_hour' or key.startswith('seven_day')):
             label = {'five_hour': '5 小时额度', 'seven_day': '每周额度', 'seven_day_sonnet': 'Sonnet · 每周', 'seven_day_opus': 'Opus · 每周'}.get(key, key)

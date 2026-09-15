@@ -14,6 +14,7 @@ Quota Pocket is an open-source quota viewer for AI accounts. A Mac collects prov
 
 ## Features
 
+- **Multiple subscription accounts:** add Codex and Claude accounts individually, with separate credentials, quota queries, labels, enable/disable controls, and reauthorization.
 - **Multiple quota sources:** CC Switch provider queries, ChatGPT / Codex subscriptions, Claude subscriptions, and CodexBar.
 - **Home Screen widgets:** small, medium, and large widgets show groups of 1, 2, and 4 accounts. Additional accounts rotate in groups. Subscription windows include reset times.
 - **Guided setup:** the installer opens a local page with four steps: connect an account, confirm a successful query, sync to iCloud, and add the iPhone widget.
@@ -25,7 +26,7 @@ Mac collector → allowlisted quota snapshot → your iCloud Drive → iPhone Sc
 
 API keys, OAuth tokens, and login credentials stay on your Mac. iCloud snapshots contain only allowlisted display fields, and the iPhone does not need account credentials. Quota Pocket reads quota information; it does not read conversations, estimate spending, or send inference requests.
 
-> v0.1.3 is an early preview. The core collection and iCloud path has been tested; background permissions and different iPhone system states still need real-device validation. The configuration UI and widget are currently in Chinese. This language switch applies to the documentation.
+> v0.2.0 is an early preview. The core collection and iCloud path has been tested; background permissions and different iPhone system states still need real-device validation. The configuration UI and widget are currently in Chinese. This language switch applies to the documentation.
 
 ## Installation
 
@@ -42,7 +43,7 @@ You need macOS, Python 3.9+, and Node.js 20+ with npm. Your Mac and iPhone must 
 Please install and start Quota Pocket on this Mac, through to opening its local configuration page.
 
 Project: https://github.com/Zssan12/quota-pocket
-Version: v0.1.3 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
+Version: v0.2.0 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
 
 Quota Pocket collects AI account quotas on a Mac, writes an allowlisted snapshot to my own iCloud Drive, and displays it in an iPhone Scriptable widget. Credentials stay on the Mac.
 
@@ -69,7 +70,7 @@ Do not paste keys or login credentials into the prompt. Complete account authori
 Paste this command into Terminal on your Mac:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Zssan12/quota-pocket/v0.1.3/install.sh | bash -s -- --repo Zssan12/quota-pocket
+curl -fsSL https://raw.githubusercontent.com/Zssan12/quota-pocket/v0.2.0/install.sh | bash -s -- --repo Zssan12/quota-pocket
 ```
 
 The installer checks your environment, downloads the specified version, installs the query dependencies, starts the local service, and opens setup in your browser. Source code comes from that GitHub repository. npm uses the lockfile with install scripts disabled. The installer does not install system tools, enable login startup, or require sudo.
@@ -136,6 +137,14 @@ Some providers are incompatible with the current read-only query constraints: HT
 
 If you explicitly use a Fake-IP proxy, set `QUOTA_POCKET_FAKE_IP=1` when first launching or installing login startup. This permits domain resolution to synthetic proxy addresses, not localhost, literal IP addresses, or other private addresses. It is disabled by default. Preserve the setting in the environment when restarting a background service that needs it.
 
+## Multiple subscription accounts
+
+In guided setup, choose ChatGPT or Claude, enter an optional label, and click “添加账号” (add account). Existing accounts remain listed above; adding another does not replace them. Confirm the intended account on the official authorization page. Only one authorization per provider type runs at a time.
+
+Each account has its own rename, disable/enable, and reauthorization controls. Labels sync to the phone, so do not put secrets in them. Disabling preserves credentials and phone selection. Once re-enabled and queried successfully, the existing widget selection can use that account again. Failed or canceled reauthorization leaves the previous connection intact; successful reauthorization clears only that account's old quota while waiting for a new query.
+
+Previously connected accounts appear as the first entries. Their credential directories and `native:codex` / `native:claude` quota IDs remain unchanged, with no need to sign in again. Failures and retry backoff are independent per account. Existing iCloud filtering and phone selection, ordering, and rotation continue to work.
+
 ## Widget selection, rotation, and diagnostics
 
 Run the script on your phone and choose “调整展示账户” (choose display accounts) to select and order accounts. Small, medium, and large widgets display 1, 2, and 4 accounts per group. Each displayed subscription window includes its reset time. Missing times are labeled explicitly; elapsed times await confirmation. Preferences stay on the phone and are not overwritten by Mac snapshots.
@@ -168,7 +177,7 @@ The supported product route is Mac collection, iCloud sync, and iPhone Scriptabl
 ## Documentation and feedback
 
 - [Local-agent installation prompt](#agent-install)
-- [v0.1.3 release notes](RELEASE-NOTES.md#english)
+- [v0.2.0 release notes](RELEASE-NOTES.md#english)
 - [Connection troubleshooting (Chinese)](CONNECTIVITY.md)
 - [Widget refresh research (Chinese)](WIDGET-REFRESH-RESEARCH.md)
 - [Validation record and limitations (Chinese)](VALIDATION.md)

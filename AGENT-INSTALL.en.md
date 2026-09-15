@@ -8,7 +8,7 @@ Copy the prompt below into a local agent that can operate your Mac, such as Code
 Please install and start Quota Pocket on this Mac, through to opening its local configuration page.
 
 Project: https://github.com/Zssan12/quota-pocket
-Version: v0.1.3 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
+Version: v0.2.0 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
 
 Quota Pocket collects AI account quotas on a Mac, writes an allowlisted snapshot to my own iCloud Drive, and displays it in an iPhone Scriptable widget. Credentials stay on the Mac.
 

@@ -178,4 +178,4 @@ class SubscriptionHTTP(unittest.TestCase):
         self.assertEqual(self.request('/api/subscriptions/claude/finish','admin','POST',[])[0],400)
         with patch.object(self.store.subscriptions,'start',return_value={}) as start:
             self.assertEqual(self.request('/api/subscriptions/codex/start','admin','POST')[0],202)
-            start.assert_called_once_with('codex')
+            start.assert_called_once_with('codex', account_id='codex', name='ChatGPT 订阅')

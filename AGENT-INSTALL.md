@@ -8,7 +8,7 @@
 请帮我在这台 Mac 安装并启动开源项目 Quota Pocket，直到自动打开配置网页。
 
 项目位置：https://github.com/Zssan12/quota-pocket
-版本：v0.1.3 测试版。若该标签不存在，请说明并让我选择可用版本，不要猜仓库地址。
+版本：v0.2.0 测试版。若该标签不存在，请说明并让我选择可用版本，不要猜仓库地址。
 
 这个项目在 Mac 采集 AI 账户额度，经字段白名单过滤后写入我自己的 iCloud Drive，由 iPhone Scriptable 展示。凭证只保留在 Mac。
 

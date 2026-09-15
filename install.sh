@@ -3,7 +3,7 @@
 set -euo pipefail
 
 main() {
-  local repo='' ref='v0.1.3' source_dir='' install_root="$HOME/Library/Application Support/QuotaPocket"
+  local repo='' ref='v0.2.0' source_dir='' install_root="$HOME/Library/Application Support/QuotaPocket"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --repo|--ref|--source|--install-dir)

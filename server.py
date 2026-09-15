@@ -10,6 +10,7 @@ import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
+import re
 import os
 from pathlib import Path
 import secrets
@@ -29,7 +30,7 @@ from hosted_sync import HostedSync, SyncError
 from subscription_auth import SubscriptionLogins, LoginError
 import service_manager
 
-VERSION = '0.1.3'
+VERSION = '0.2.0'
 
 
 def build_id():
@@ -59,6 +60,21 @@ def instance_lock(directory):
 DEFAULT_CONFIG = {'intervalSeconds': 300, 'publicUrl': '', 'widgetProviderIds': None, 'icloudProviderIds': None, 'sources': {
     'cc-switch': {'enabled': False, 'mode': 'independent'}, 'codexbar': {'enabled': False, 'mode': 'cli'},
     'codex': {'enabled': False}, 'claude': {'enabled': False}}}
+
+
+SUBSCRIPTION_NAMES = {'codex': 'ChatGPT 订阅', 'claude': 'Claude 订阅'}
+
+
+def subscription_kind(identifier):
+    if not isinstance(identifier, str): return None
+    match = re.fullmatch(r'(codex|claude)(?::[0-9a-f]{24})?', identifier)
+    return match.group(1) if match else None
+
+
+def subscription_name(value):
+    if not isinstance(value, str) or not value.strip() or len(value.strip()) > 60 or any(ord(c) < 32 for c in value):
+        raise LoginError('账号备注需为 1–60 个字符，不能包含换行或控制字符。')
+    return value.strip()
 
 
 def write_private(path, value):
@@ -232,18 +248,81 @@ class Store:
         self.export_icloud()
         return self.icloud_accounts()
 
+    def subscription_entries(self, kind):
+        # Called under Store.lock. Existing codex/claude keys are the first
+        # accounts, so legacy credential paths and native:* widget IDs survive.
+        return [(key, config) for key, config in self.config['sources'].items()
+                if subscription_kind(key) == kind and config.get('managed')]
+
+    def start_subscription(self, kind, data):
+        if not isinstance(data, dict) or set(data) - {'accountId', 'name'}:
+            raise LoginError('账号授权请求无效。')
+        if kind not in SUBSCRIPTION_NAMES: raise LoginError('未知订阅类型。')
+        if 'name' in data and not isinstance(data['name'], str): raise LoginError('账号备注必须是文字。')
+        # Login callbacks take these locks in this order too.
+        with self.subscriptions.lock, self.lock:
+            identifier = data.get('accountId')
+            if identifier is not None:
+                if subscription_kind(identifier) != kind or not self.config['sources'].get(identifier, {}).get('managed'):
+                    raise LoginError('账号不存在，请刷新列表。')
+                name = self.config['sources'][identifier].get('name') or SUBSCRIPTION_NAMES[kind]
+            else:
+                entries = self.subscription_entries(kind)
+                identifier = kind if not self.config['sources'][kind].get('managed') else kind + ':' + secrets.token_hex(12)
+                name = subscription_name(data['name']) if data.get('name') else SUBSCRIPTION_NAMES[kind] + (' ' + str(len(entries) + 1) if entries else '')
+            self.subscriptions.start(kind, account_id=identifier, name=name)
+
     def connect_subscription(self, kind, config):
+        identifier = config.get('accountId', kind)
+        if subscription_kind(identifier) != kind: raise LoginError('账号类型不匹配。')
+        name = subscription_name(config.get('name') or SUBSCRIPTION_NAMES[kind])
         with self.lock:
-            self.config['sources'][kind] = dict(config)
-            # A new account must never briefly display the previous account's quota.
-            self.rows = [r for r in self.rows if r.get('_sourceId') != kind]
-            self.source_status = [r for r in self.source_status if r.get('id') != kind]
+            previous = self.config['sources'].get(identifier, {})
+            # A successful reauthorization preserves the account's enabled state.
+            self.config['sources'][identifier] = {
+                **{key: config[key] for key in ('home', 'path') if key in config},
+                'managed': True, 'enabled': previous.get('enabled', True) if previous.get('managed') else True,
+                'name': name}
+            # Only this account loses its previous quota after reauthorization.
+            self.rows = [r for r in self.rows if r.get('_sourceId') != identifier]
+            self.source_status = [r for r in self.source_status if r.get('id') != identifier]
+            self.source_retries.pop(identifier, None)
             self.revision += 1
-            self.last_started = 0
+            self.last_started = float('-inf')
             write_private(self.directory / 'config.json', self.config)
-            write_private(self.directory / 'snapshot.json', {'providers':self.rows,'sources':self.source_status,'lastCollectionAt':self.last_collection})
+            write_private(self.directory / 'snapshot.json', {'providers': self.rows, 'sources': self.source_status, 'lastCollectionAt': self.last_collection})
         self.export_icloud()
         self.request_refresh(force=True)
+
+    def update_subscription(self, kind, data):
+        if not isinstance(data, dict) or set(data) - {'accountId', 'name', 'enabled'} or not ({'name', 'enabled'} & set(data)):
+            raise LoginError('需要账号 ID 与要修改的备注或采集开关。')
+        identifier = data.get('accountId')
+        if subscription_kind(identifier) != kind: raise LoginError('账号类型不匹配。')
+        name = subscription_name(data['name']) if 'name' in data else None
+        if 'enabled' in data and not isinstance(data['enabled'], bool): raise LoginError('采集开关必须为布尔值。')
+        with self.subscriptions.lock, self.lock:
+            config = self.config['sources'].get(identifier)
+            if not config or not config.get('managed'): raise LoginError('账号不存在，请刷新列表。')
+            job = self.subscriptions.jobs.get(kind, {})
+            if job.get('accountId') == identifier and job.get('state') in ('starting', 'waiting', 'saving'):
+                raise LoginError('请先完成或取消这个账号的授权，再修改设置。')
+            if name is not None:
+                config['name'] = name
+                for row in self.rows:
+                    if row.get('_sourceId') == identifier: row['name'] = name
+            if 'enabled' in data:
+                config['enabled'] = data['enabled']
+                if not config['enabled']:
+                    self.rows = [r for r in self.rows if r.get('_sourceId') != identifier]
+                    self.source_status = [r for r in self.source_status if r.get('id') != identifier]
+            self.source_retries.pop(identifier, None)
+            self.revision += 1
+            self.last_started = float('-inf')
+            write_private(self.directory / 'config.json', self.config)
+            write_private(self.directory / 'snapshot.json', {'providers': self.rows, 'sources': self.source_status, 'lastCollectionAt': self.last_collection})
+        self.export_icloud()
+        if data.get('enabled'): self.request_refresh(force=True)
 
     def subscription_status(self):
         with self.lock:
@@ -251,15 +330,21 @@ class Store:
             sources = copy.deepcopy(self.source_status)
         jobs = self.subscriptions.statuses()
         result = {}
-        for kind in ('codex', 'claude'):
-            config = configs[kind]
-            credential = (Path(config['home'])/'auth.json') if kind=='codex' and config.get('home') else Path(config.get('path','/nonexistent'))
-            connected = bool(config.get('managed') and credential.is_file())
-            result[kind] = {'connected':connected, 'enabled':bool(config.get('enabled')), 'available':bool(shutil.which(kind)),
-                            'state':'connected' if connected else 'disconnected', 'authUrl':None, 'id':None,
-                            'message':'独立登录已保存。' if connected else '单独登录订阅，不影响桌面工具的 API Key 或 Provider。',
-                            'quotaError':next((s.get('error') for s in sources if s['id']==kind),None)}
-            result[kind].update(jobs.get(kind,{}))
+        for kind in SUBSCRIPTION_NAMES:
+            accounts = []
+            for identifier, config in configs.items():
+                if subscription_kind(identifier) != kind or not config.get('managed'): continue
+                credential = (Path(config['home']) / 'auth.json') if kind == 'codex' and config.get('home') else Path(config.get('path', '/nonexistent'))
+                accounts.append({'id': identifier, 'providerId': 'native:' + identifier,
+                                 'name': config.get('name') or SUBSCRIPTION_NAMES[kind],
+                                 'connected': credential.is_file(), 'enabled': bool(config.get('enabled')),
+                                 'quotaError': next((s.get('error') for s in sources if s['id'] == identifier), None)})
+            connected = any(a['connected'] for a in accounts)
+            result[kind] = {'accounts': accounts, 'connected': connected,
+                            'enabled': any(a['enabled'] for a in accounts), 'available': bool(shutil.which(kind)),
+                            'state': 'connected' if connected else 'disconnected', 'authUrl': None, 'id': None,
+                            'message': '每个账号单独保存凭证。添加账号不会替换已有账号。'}
+            result[kind].update(jobs.get(kind, {}))
         return result
 
     def create_pairing(self):
@@ -293,7 +378,8 @@ class Store:
                     'ccSwitchMode': self.config['sources']['cc-switch']['mode'],
                     'ccSwitchSnapshotPath': str(cc_snapshot_path(self.config['sources']['cc-switch'])),
                     'ccSwitchSnapshotAvailable': cc_snapshot_path(self.config['sources']['cc-switch']).is_file(),
-                    'sources': {k: {'enabled': bool(v.get('enabled')), 'managed':bool(v.get('managed'))} for k, v in self.config['sources'].items()},
+                    'sources': {k: {'enabled': any(v.get('enabled') for _, v in self.subscription_entries(k)) if k in SUBSCRIPTION_NAMES and self.subscription_entries(k) else bool(self.config['sources'][k].get('enabled')),
+                                    'managed': bool(self.subscription_entries(k)) if k in SUBSCRIPTION_NAMES else False} for k in ADAPTERS},
                     'detected': {'cc-switch': Path('~/.cc-switch/cc-switch.db').expanduser().is_file(),
                                  'codexbar': bool(shutil.which('codexbar') or Path('/Applications/CodexBar.app').exists()),
                                  'codex': bool(shutil.which('codex')),
@@ -322,6 +408,9 @@ class Store:
             self.config['publicUrl'] = url
             self.config['sources']['cc-switch'].update(mode=mode, snapshotPath=snapshot_path)
             for key, value in sources.items():
+                # Managed accounts have individual controls; unrelated settings
+                # saves must never turn their group on/off via a stale checkbox.
+                if key in SUBSCRIPTION_NAMES and self.subscription_entries(key): continue
                 self.config['sources'][key]['enabled'] = value
             # The bridge already includes native subscription caches.
             if mode == 'snapshot' and self.config['sources']['cc-switch']['enabled']:
@@ -387,7 +476,11 @@ class Store:
             all_rows, statuses = [], []
             def query(pair):
                 key, config = pair
-                try: return key, ADAPTERS[key](config), None
+                try:
+                    kind = subscription_kind(key)
+                    if kind:
+                        config = dict(config, providerId='native:' + key, name=config.get('name') or SUBSCRIPTION_NAMES[kind])
+                    return key, ADAPTERS[kind or key](config), None
                 except SourceError as error: return key, [], str(error)
                 except Exception: return key, [], '数据源读取失败，请检查本地配置和版本。'
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
@@ -641,17 +734,23 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(400, {'error': '同步设置无效。'})
         if path.startswith('/api/subscriptions/'):
             parts = path.split('/')
-            if len(parts) != 5 or parts[3] not in ('codex','claude') or parts[4] not in ('start','cancel','finish'):
+            if len(parts) != 5 or parts[3] not in ('codex','claude') or parts[4] not in ('start','cancel','finish','update'):
                 return self.send(404, {'error':'未知订阅操作。'})
             kind, action = parts[3:]
+            if not self.local_request(): return self.send(403, {'error': '订阅账号只能在本机管理。'})
             try:
-                if action == 'start':
-                    self.store.subscriptions.start(kind)
-                    return self.send(202, self.store.subscription_status())
                 length = int(self.headers.get('Content-Length','0'))
-                if not 1 <= length <= 5000 or not self.headers.get('Content-Type','').startswith('application/json'): raise ValueError()
-                body = json.loads(self.rfile.read(length))
-                if action == 'cancel': self.store.subscriptions.cancel(kind,body.get('id'))
+                if action == 'start' and length == 0:
+                    body = {}
+                else:
+                    if not 1 <= length <= 5000 or not self.headers.get('Content-Type','').startswith('application/json'): raise ValueError()
+                    body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict): raise ValueError()
+                if action == 'start':
+                    self.store.start_subscription(kind, body)
+                    return self.send(202, self.store.subscription_status())
+                if action == 'update': self.store.update_subscription(kind, body)
+                elif action == 'cancel': self.store.subscriptions.cancel(kind,body.get('id'))
                 else: self.store.subscriptions.finish(kind,body.get('id'),body.get('code'))
                 return self.send(200,self.store.subscription_status())
             except (LoginError,ValueError,TypeError,AttributeError) as error:

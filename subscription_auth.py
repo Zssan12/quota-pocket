@@ -195,19 +195,22 @@ class SubscriptionLogins:
 
     def statuses(self):
         with self.lock:
-            return {k:{field:job.get(field) for field in ('id','state','authUrl','message')} for k,job in self.jobs.items()}
+            return {k:{field:job.get(field) for field in ('id','state','authUrl','message','accountId','accountName')} for k,job in self.jobs.items()}
 
-    def start(self, kind):
+    def start(self, kind, account_id=None, name=None):
         if kind not in ('codex','claude'): raise LoginError('未知订阅类型。')
         executable = shutil.which(kind)
         if not executable: raise LoginError('请先安装 ' + ('Codex CLI' if kind=='codex' else 'Claude Code') + '，然后再连接订阅。')
         with self.lock:
             old = self.jobs.get(kind)
-            if old and old['state'] in ('starting','waiting','saving'): return self.statuses()[kind]
+            if old and old['state'] in ('starting','waiting','saving'):
+                if old.get('accountId') != account_id:
+                    raise LoginError('请先完成或取消这个类型正在进行的授权，再连接其他账号。')
+                return self.statuses()[kind]
             attempt = self.directory / kind / secrets.token_hex(12)
             attempt.mkdir(parents=True, mode=0o700)
             for p in (attempt, attempt.parent, self.directory): os.chmod(p, 0o700)
-            job = {'id':secrets.token_urlsafe(24), 'state':'starting', 'message':'正在启动独立登录…',
+            job = {'accountId':account_id, 'accountName':name, 'id':secrets.token_urlsafe(24), 'state':'starting', 'message':'正在启动独立登录…',
                    'authUrl':None, 'directory':attempt, 'cancel':threading.Event(), 'process':None}
             self.jobs[kind] = job
             threading.Thread(target=self._run, args=(kind,executable,job), daemon=True).start()
@@ -223,6 +226,8 @@ class SubscriptionLogins:
             else: config = self._claude(executable,job)
             with self.lock:
                 if job['cancel'].is_set() or self.jobs.get(kind) is not job: return
+                if job.get('accountId') is not None:
+                    config.update(accountId=job['accountId'], name=job['accountName'])
                 self.on_connected(kind, config)
                 job.update(state='connected', authUrl=None, message='独立订阅已连接，正在读取额度。可到“手机小组件”勾选展示。')
         except Exception as error:

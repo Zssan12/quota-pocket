@@ -23,3 +23,12 @@
 @media(max-width:680px){.setup-progress{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.setup-progress button{padding:12px;font-size:12px}.setup-card{padding:20px 16px}.setup-card h2{font-size:22px}.setup-footer{flex-wrap:wrap;gap:10px}.setup-footer p{order:-1;flex-basis:100%;margin:0}.setup-footer .button{flex:1}.account-choices button{padding:10px;font-size:12px}.setup-card .simple-checklist{font-size:13px}.setup-quota{align-items:flex-start}.setup-card .icloud-setup{padding:14px}.setup-card .runtime-panel{padding:14px}}
 /* Match square / wide widget proportions, including narrow phone previews. */
 .phone{width:300px;max-width:100%}.phone-widget{padding:7px}.phone-widget.size-small{min-height:0;aspect-ratio:1}.phone-widget.size-medium{min-height:0;aspect-ratio:2.12}.size-brand{font-size:6px;margin-bottom:4px}.size-account>strong{font-size:7px;line-height:1.2;margin-bottom:1px}.size-account .size-app{font-size:5px;margin-bottom:1px;line-height:1.2}.size-window{font-size:5.5px;margin-top:1px;line-height:1.2}.size-window b{font-size:8px}.phone-widget .size-account progress{height:2px;margin-top:1px}.size-account .size-reset{font-size:5.5px;line-height:1.2;margin:1px 0}.size-account .size-capture{font-size:5px;margin-top:2px;line-height:1.2}
+
+/* Multiple independently authorized subscription accounts. */
+.subscription-accounts{display:grid;gap:10px;margin:16px 0}
+.subscription-account{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line,#ddd);border-radius:12px}
+.subscription-account-info{display:grid;gap:6px;min-width:0;flex:1 1 180px;overflow-wrap:anywhere}
+.subscription-account-info small,.subscription-empty{font-size:12px;color:var(--muted,#777);line-height:1.6}
+.subscription-account-actions{display:flex;flex-wrap:wrap;gap:12px}
+.subscription-new-name{display:block;margin:14px 0 6px;font-size:12px}
+.subscription-new-name+input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:8px;background:transparent;color:inherit}

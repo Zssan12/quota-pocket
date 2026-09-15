@@ -14,6 +14,7 @@ Quota Pocket 是一个开源的 AI 额度查看工具：Mac 负责读取中转 A
 
 ## 可以做什么
 
+- **多个订阅账号**：Codex、Claude 均可逐个添加账号，独立保存凭证、查询额度，并分别备注、停用或重新授权。
 - **集中查看额度**：接入 CC Switch 查询、ChatGPT / Codex 订阅、Claude 订阅及 CodexBar。
 - **手机桌面展示**：小、中、大组件每组显示 1、2、4 个账户；选择超出容量时按组轮换，订阅显示各窗口的重置时间。
 - **按步骤配置**：安装后自动打开本地网页，跟随账户连接、额度确认、iCloud 同步和手机配置四步完成。
@@ -25,7 +26,7 @@ Mac 采集 → 白名单额度快照 → 你自己的 iCloud Drive → iPhone Sc
 
 API Key、OAuth Token 和登录凭证仅保存在 Mac。iCloud 中的额度快照只包含白名单允许的展示字段；iPhone 不需要账户密钥。项目只查询额度，不读取对话、不估算消费、不发起模型请求。
 
-> v0.1.3 测试版：核心采集与 iCloud 链路已验证；后台权限和不同 iPhone 系统状态仍需实机验收。配置网页与小组件目前使用中文，上方链接切换文档语言。
+> v0.2.0 测试版：核心采集与 iCloud 链路已验证；后台权限和不同 iPhone 系统状态仍需实机验收。配置网页与小组件目前使用中文，上方链接切换文档语言。
 
 ## 安装
 
@@ -42,7 +43,7 @@ API Key、OAuth Token 和登录凭证仅保存在 Mac。iCloud 中的额度快�
 请帮我在这台 Mac 安装并启动开源项目 Quota Pocket，直到自动打开配置网页。
 
 项目位置：https://github.com/Zssan12/quota-pocket
-版本：v0.1.3 测试版。若该标签不存在，请说明并让我选择可用版本，不要猜仓库地址。
+版本：v0.2.0 测试版。若该标签不存在，请说明并让我选择可用版本，不要猜仓库地址。
 
 这个项目在 Mac 采集 AI 账户额度，经字段白名单过滤后写入我自己的 iCloud Drive，由 iPhone Scriptable 展示。凭证只保留在 Mac。
 
@@ -68,7 +69,7 @@ API Key、OAuth Token 和登录凭证仅保存在 Mac。iCloud 中的额度快�
 在 Mac 终端粘贴运行：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Zssan12/quota-pocket/v0.1.3/install.sh | bash -s -- --repo Zssan12/quota-pocket
+curl -fsSL https://raw.githubusercontent.com/Zssan12/quota-pocket/v0.2.0/install.sh | bash -s -- --repo Zssan12/quota-pocket
 ```
 
 安装器检查环境、下载指定版本、安装查询依赖、启动本机服务并自动打开配置网页。源码来自对应 GitHub 仓库，npm 依赖按锁文件安装且禁用安装脚本。不会替你安装系统工具或启用登录自动启动，也不需要 sudo。
@@ -133,6 +134,14 @@ start / restart 启用登录启动并通过 launchd 运行当前版本；disable
 
 如本人明确使用 Fake-IP 代理，可在首次启动或安装后台时设置 `QUOTA_POCKET_FAKE_IP=1`。它仅允许域名解析到代理合成地址，不放行 localhost、直接 IP 或其他内网地址；默认关闭。已有后台启用该选项时需在重启的环境中保留。
 
+## 多个订阅账号
+
+在“一步步配置 → 连接账户”选择 ChatGPT 或 Claude，填写可选备注，点击“添加账号”。已有账号会列在上方，添加新账号不会替换它们。每次在官方授权页面确认选中的是目标账号；同一类型一次只进行一场授权。
+
+每个账号可单独修改备注、停用 / 启用或重新授权。备注会随额度同步到手机，请勿填入密钥。停用保留凭证和手机选择；重新启用并成功采集后，原来的组件选择仍可使用。重新授权失败或取消会保留原有连接；成功后清除该账号旧额度，等待新查询，避免串号。
+
+旧版已连接的账号会成为列表中的第一项，凭证目录和 `native:codex` / `native:claude` 额度 ID 保持不变，无需重新登录。每个账号的失败与退避独立，不影响其他账号。iCloud 和手机端继续使用原来的选择、排序及轮换功能。
+
 ## 手机展示与诊断
 
 运行手机脚本 → 调整展示账户 → 勾选、排序。小、中、大号每组显示 1、2、4 个账户，超出时按选择顺序轮换；三种尺寸都逐窗口显示重置时间。时间缺失会明确提示，过期时间显示待确认。选择保存在手机，后续 Mac 快照不会覆盖。
@@ -168,7 +177,7 @@ npm test
 - [连接与同步排查](CONNECTIVITY.md)
 - [小组件刷新与轮换机制](WIDGET-REFRESH-RESEARCH.md)
 - [验证记录与已知限制](VALIDATION.md)
-- [v0.1.3 发布说明](RELEASE-NOTES.md)
+- [v0.2.0 发布说明](RELEASE-NOTES.md)
 
 欢迎通过 GitHub Issues 提交问题或建议。请提供 macOS / iOS 版本、操作步骤及已脱敏的错误信息；不要附上密钥、Token、带管理凭证的网址或真实账户快照。提交代码前请运行 `npm test`。
 

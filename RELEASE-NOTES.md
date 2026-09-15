@@ -1,3 +1,25 @@
+# v0.2.0 · 多订阅账号 / Multiple subscription accounts
+
+## 简体中文
+
+- Codex、Claude 均支持添加多个独立订阅账号，可分别备注、停用 / 启用和重新授权。
+- 原有账号凭证与额度 ID 保留，无需重新登录，手机选择继续有效。
+- 每个账号独立查询和失败退避；重新授权不会覆盖其他账号，停用不删除凭证。
+- 新增 13 项回归测试，覆盖旧状态兼容、账号隔离、查询失败、授权失败和管理权限。网页已用模拟账号验证新增、备注、停用、启用和重新授权，320 / 390 / 1440 像素宽无横向溢出。
+
+本版仍为测试版。多个真实账号的授权需用户在官方页面逐个完成；模拟测试不能代替所有账户和上游版本的实测。登录后台权限、iCloud 到达时间与 iOS 刷新限制仍然存在。安装器不会自动升级已有安装；重跑命令会打开已有版本。
+
+## English
+
+- Add multiple independent Codex and Claude subscription accounts, each with its own label, enable/disable controls, and reauthorization.
+- Existing credentials and quota IDs are preserved, so previous logins and phone selections continue to work.
+- Queries and retry backoff are independent per account. Reauthorization does not replace other accounts; disabling does not delete credentials.
+- Added 13 regression tests for existing-state compatibility, account isolation, query and login failures, and management authorization. Browser checks with synthetic accounts cover adding, renaming, disabling, enabling, and reauthorization, with no horizontal overflow at 320 / 390 / 1440 pixels.
+
+This remains a preview. Users must authorize their real accounts on the official pages; mocks do not establish compatibility with every account or upstream version. Background permissions, iCloud delivery, and iOS refresh limitations still apply. The installer does not upgrade existing installations; rerunning it opens the installed version.
+
+---
+
 # v0.1.3 · 额度口袋 / Quota Pocket
 
 [简体中文](#中文) · [English](#english)

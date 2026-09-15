@@ -118,10 +118,10 @@ $('#mode-toggle').onclick=()=>setDemo(!demo);$('#exit-demo').onclick=()=>{setDem
 $('#connect-button').onclick=()=>$('#connect-dialog').showModal();$('#connect-inline').onclick=()=>$('#connect-dialog').showModal();$('.dialog-close').onclick=()=>$('#connect-dialog').close();
 $('#connect-form').onsubmit=async event=>{event.preventDefault();const candidate=$('#access-token').value.trim();const previous=token;token=candidate;try{await api('/api/snapshot');writeStorage('qp-access',token);$('#access-token').value='';$('#connect-dialog').close();setDemo(false);toast('设备已连接');if((view==='sources'||view==='setup'))loadSettings();}catch(error){token=previous;toast(error.message);}};
 $('#refresh').onclick=async()=>{if(demo){await load();toast('示例已刷新；没有查询真实账户。');return;}if(!token){$('#connect-dialog').showModal();return;}try{const result=await api('/api/refresh',{method:'POST'});toast(result.started?'正在向数据源读取最新额度…':'采集已在进行，或刚刚完成，请稍后查看。');await load();}catch(error){toast(error.message);}};
-async function loadSettings(){const form=$('#settings-form');admin=false;try{if(demo)throw Object.assign(new Error('演示模式不修改数据源，点击“连接我的额度”开始。'),{demo:true});if(!token)throw new Error('请先点击右上角 Q，输入本机管理凭证。');const settings=await api('/api/settings');admin=true;form.dataset.managedCodex=String(!!settings.sources.codex?.managed);form.dataset.managedClaude=String(!!settings.sources.claude?.managed);for(const key of Object.keys(names)){form.elements.namedItem(key).checked=!!settings.sources[key]?.enabled;$('#detect-'+key).textContent=settings.sources[key]?.managed?'使用额度口袋的独立登录':settings.detected[key]?'已检测到本机数据源':'未检测到 · 可配置后再启用';}form.elements.ccSwitchMode.value=settings.ccSwitchMode;form.elements.ccSwitchSnapshotPath.value=settings.ccSwitchSnapshotPath;form.dataset.snapshotAvailable=String(settings.ccSwitchSnapshotAvailable);form.elements.intervalSeconds.value=String(settings.intervalSeconds);form.elements.publicUrl.value=settings.publicUrl;$('#mobile-connection-status').textContent=settings.publicUrl?(settings.publicUrl.includes('.trycloudflare.com')?'已保存临时连接 · 直接生成二维码即可；隧道重建换址后需重新配对。':'已保存连接 · 直接生成二维码即可，无需重复输入地址。'):'尚未设置 HTTPS 入口 · iCloud 模式无需配置。';$('#settings-note').textContent='保存后读取所选数据源，不修改原工具配置。';}catch(error){$('#settings-note').textContent=error.message;$('#mobile-connection-status').textContent=demo?'演示模式无需配置手机连接。':'连接管理端后显示已保存的手机连接。';}form.querySelector('button[type=submit]').disabled=!admin;syncSourceToggles();}
+async function loadSettings(){const form=$('#settings-form');admin=false;try{if(demo)throw Object.assign(new Error('演示模式不修改数据源，点击“连接我的额度”开始。'),{demo:true});if(!token)throw new Error('请先点击右上角 Q，输入本机管理凭证。');const settings=await api('/api/settings');admin=true;form.dataset.managedCodex=String(!!settings.sources.codex?.managed);form.dataset.managedClaude=String(!!settings.sources.claude?.managed);for(const key of Object.keys(names)){form.elements.namedItem(key).checked=!!settings.sources[key]?.enabled;$('#detect-'+key).textContent=settings.sources[key]?.managed?'请在上方账号列表逐个管理':settings.detected[key]?'已检测到本机数据源':'未检测到 · 可配置后再启用';}form.elements.ccSwitchMode.value=settings.ccSwitchMode;form.elements.ccSwitchSnapshotPath.value=settings.ccSwitchSnapshotPath;form.dataset.snapshotAvailable=String(settings.ccSwitchSnapshotAvailable);form.elements.intervalSeconds.value=String(settings.intervalSeconds);form.elements.publicUrl.value=settings.publicUrl;$('#mobile-connection-status').textContent=settings.publicUrl?(settings.publicUrl.includes('.trycloudflare.com')?'已保存临时连接 · 直接生成二维码即可；隧道重建换址后需重新配对。':'已保存连接 · 直接生成二维码即可，无需重复输入地址。'):'尚未设置 HTTPS 入口 · iCloud 模式无需配置。';$('#settings-note').textContent='保存后读取所选数据源，不修改原工具配置。';}catch(error){$('#settings-note').textContent=error.message;$('#mobile-connection-status').textContent=demo?'演示模式无需配置手机连接。':'连接管理端后显示已保存的手机连接。';}form.querySelector('button[type=submit]').disabled=!admin;syncSourceToggles();}
 function syncSourceToggles(){
  const form=$('#settings-form');const cached=form.elements.ccSwitchMode.value==='snapshot';const bridge=cached&&form.elements.namedItem('cc-switch').checked;const barControl=form.elements.namedItem('codexbar');barControl.disabled=bridge;if(bridge)barControl.checked=false;
- for(const key of ['codex','claude']){const control=form.elements.namedItem(key);const managed=form.dataset[key==='codex'?'managedCodex':'managedClaude']==='true';control.disabled=!managed&&(bridge||barControl.checked);if(control.disabled)control.checked=false;}
+ for(const key of ['codex','claude']){const control=form.elements.namedItem(key);const managed=form.dataset[key==='codex'?'managedCodex':'managedClaude']==='true';control.disabled=managed||bridge||barControl.checked;if(!managed&&control.disabled)control.checked=false;}
  $('#cc-path-label').hidden=!cached;$('#cc-mode-note').textContent=cached?(form.dataset.snapshotAvailable==='true'?'已发现快照文件；每 5 秒检查本地文件变化，额度时间沿用 CC Switch 原始记录。':'等待快照：官方 CC Switch 尚无导出入口，需要随项目提供的源码补丁。此模式不会请求 Provider，也不会自动回退。'):'新配置默认每 5 分钟重新请求平台。若 CC Switch 自身也在查询，会重复请求；建议只保留一个查询方。';
 } 
 for(const key of ['codexbar','cc-switch','ccSwitchMode'])$('#settings-form').elements.namedItem(key).onchange=syncSourceToggles;
@@ -168,13 +168,24 @@ $('#copy-connection').onclick=async()=>{if(demo){toast('演示模式没有手机
 $('#revoke').onclick=async()=>{if(demo){toast('演示模式没有连接设备。');return;}if(!confirm('撤销当前手机只读凭证？已连接手机需要重新配对。'))return;try{await api('/api/revoke',{method:'POST'});$('#install-share').hidden=true;installLink='';installExpiry=0;toast('旧凭证已撤销，可重新复制连接信息。');}catch(error){toast(error.message);}};
 function renderSubscriptions(){
   for(const kind of ['codex','claude']){
-    const state=subscriptionStates[kind]||{}, busy=['starting','waiting','saving'].includes(state.state);
+    const state=subscriptionStates[kind]||{}, busy=['starting','waiting','saving'].includes(state.state), accounts=state.accounts||[];
     const start=$(`[data-subscription-start="${kind}"]`),cancel=$(`[data-subscription-cancel="${kind}"]`),link=$(`#subscription-${kind}-link`);
     start.disabled=demo||!subscriptionAdmin||busy;
-    start.textContent=busy?'正在连接…':(state.connected?'重新连接':'连接')+(kind==='codex'?' ChatGPT 订阅':' Claude 订阅');
+    start.textContent=busy?'正在授权…':'添加 '+(kind==='codex'?'ChatGPT':'Claude')+' 账号';
+    $(`#subscription-${kind}-name`).disabled=demo||!subscriptionAdmin||busy;
     cancel.hidden=!busy;cancel.disabled=!subscriptionAdmin;
-    const badge=$(`#subscription-${kind}-badge`);badge.textContent=busy?'等待授权':state.connected?(state.enabled?'已连接':'已连接 · 未采集'):'未连接';
-    $(`#subscription-${kind}-status`).textContent=demo?'演示模式不会启动真实登录。':!subscriptionAdmin?'请在电脑管理端连接。':(state.message||'单独登录订阅，不影响桌面工具。')+(!busy&&state.quotaError?' 额度查询：'+state.quotaError:'');
+    const count=accounts.filter(a=>a.connected).length, enabled=accounts.filter(a=>a.enabled).length;
+    $(`#subscription-${kind}-badge`).textContent=busy?'等待授权':accounts.length?`${count} 个已连接 · ${enabled} 个采集`:'未连接';
+    $(`#subscription-${kind}-status`).textContent=demo?'演示模式不会启动真实登录。':!subscriptionAdmin?'请在电脑管理端连接。':(busy&&state.accountName?'正在授权「'+state.accountName+'」。':'')+(state.message||'添加账号不会替换已有账号。');
+    const list=$(`#subscription-${kind}-accounts`),signature=JSON.stringify([accounts,demo,subscriptionAdmin,busy]);
+    if(list.dataset.state!==signature){
+    list.innerHTML=accounts.length?accounts.map(account=>{
+      const locked=demo||!subscriptionAdmin||busy, disabled=locked?'disabled':'';
+      const status=!account.connected?'登录凭证不可用，请重新授权':!account.enabled?'已停用，凭证保留':account.quotaError?'查询失败：'+account.quotaError:'已启用采集';
+      return `<div class="subscription-account"><div class="subscription-account-info"><strong>${escape(account.name)}</strong><small>${escape(status)}</small></div><div class="subscription-account-actions"><button type="button" class="text-button" data-account-action="rename" data-account-id="${escape(account.id)}" ${disabled}>修改备注</button><button type="button" class="text-button" data-account-action="toggle" data-account-id="${escape(account.id)}" ${disabled}>${account.enabled?'停用':'启用'}</button><button type="button" class="text-button" data-account-action="reauthorize" data-account-id="${escape(account.id)}" ${disabled}>重新授权</button></div></div>`;
+    }).join(''):'<p class="subscription-empty">还没有账号。点击下方按钮添加第一个账号。</p>';
+    list.dataset.state=signature;
+    }
     let safe=false;try{const u=new URL(state.authUrl);safe=u.protocol==='https:'&&!u.username&&!u.password&&(kind==='codex'?['auth.openai.com']:['claude.ai','claude.com','platform.claude.com','console.anthropic.com']).includes(u.hostname);}catch{}
     link.hidden=!busy||!safe;if(safe)link.href=state.authUrl;else link.removeAttribute('href');
   }
@@ -195,9 +206,25 @@ async function loadSubscriptions(){
 $$('[data-subscription-start]').forEach(button=>button.onclick=async()=>{
   if(demo||!subscriptionAdmin)return;button.disabled=true;
   const kind=button.dataset.subscriptionStart;
-  try{subscriptionStates=await api(`/api/subscriptions/${kind}/start`,{method:'POST'});renderSubscriptions();await loadSubscriptions();}
+  try{subscriptionStates=await api(`/api/subscriptions/${kind}/start`,{method:'POST',body:JSON.stringify({name:$(`#subscription-${kind}-name`).value.trim()})});$(`#subscription-${kind}-name`).value='';$('#claude-auth-code').value='';renderSubscriptions();await loadSubscriptions();}
   catch(error){toast(error.message);renderSubscriptions();}
 });
+for(const kind of ['codex','claude'])$(`#subscription-${kind}-accounts`).onclick=async event=>{
+  const button=event.target.closest('[data-account-action]');if(!button||button.disabled||demo||!subscriptionAdmin)return;
+  const account=(subscriptionStates[kind]?.accounts||[]).find(a=>a.id===button.dataset.accountId);if(!account)return;
+  const action=button.dataset.accountAction;let endpoint='update',body={accountId:account.id};
+  if(action==='rename'){
+    const name=prompt('账号备注（会同步到手机，请勿填密钥）',account.name);if(name===null)return;body.name=name.trim();
+  }else if(action==='toggle')body.enabled=!account.enabled;
+  else if(action==='reauthorize'){endpoint='start';$('#claude-auth-code').value='';}else return;
+  button.disabled=true;
+  try{
+    subscriptionStates=await api(`/api/subscriptions/${kind}/${endpoint}`,{method:'POST',body:JSON.stringify(body)});
+    renderSubscriptions();await loadSettings();await load();
+    if(endpoint==='update')toast(action==='rename'?'备注已保存':body.enabled?'账号已启用':'账号已停用，登录凭证保留');
+  }catch(error){toast(error.message);}
+  finally{button.disabled=false;renderSubscriptions();}
+};
 $$('[data-subscription-cancel]').forEach(button=>button.onclick=async()=>{
   const kind=button.dataset.subscriptionCancel;button.disabled=true;
   try{subscriptionStates=await api(`/api/subscriptions/${kind}/cancel`,{method:'POST',body:JSON.stringify({id:subscriptionStates[kind]?.id})});$('#claude-auth-code').value='';renderSubscriptions();}
