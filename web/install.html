@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>安装 iPhone 小组件 · 额度口袋</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/install.css"><script src="/install.js" defer></script></head>
+<body><main>
+  <span class="eyebrow">QUOTA POCKET · IPHONE</span>
+  <h1>把额度放到桌面。</h1>
+  <p>先导入脚本，再点连接。已经导入新版脚本？直接到第 2 步。</p>
+  <section><span class="step">1</span><h2>导入 / 更新脚本</h2><p>通用脚本不含账号密码、API Key 或手机访问凭证，可以公开分享。</p><a class="button" href="/downloads/Quota-Pocket.js" download="Quota Pocket.js">下载 Quota Pocket.js</a><p>下载后在“文件”中，将脚本存到 <b>iCloud Drive → Scriptable</b> 文件夹，再打开 Scriptable。更新时替换同名脚本，保留原名称。</p><details><summary>没有 Scriptable 文件夹？用复制方式导入</summary><button id="copy-script" disabled>正在准备脚本…</button><p>Scriptable → ＋ → 粘贴代码 → 命名为 <b>Quota Pocket</b>。已有脚本则进入编辑，替换全部代码。</p><a class="button secondary" href="scriptable:///">打开 Scriptable</a><details id="script-fallback"><summary>手动全选复制</summary><textarea id="script-text" readonly aria-label="组件脚本" spellcheck="false"></textarea></details></details><p id="copy-status" role="status"></p></section>
+  <section><span class="step">2</span><h2>连接我的电脑</h2><div id="quick-pair" hidden><p>点击下方按钮，Scriptable 会显示电脑地址。确认后即可读取额度，无需粘贴 JSON。</p><label for="script-name">Scriptable 里的脚本名称</label><input id="script-name" value="Quota Pocket" autocomplete="off"><p class="hint">名称需要完全相同；连接多台电脑时，各保存一份脚本并取不同名称。</p><a id="connect-script" class="button" href="scriptable:///">在 Scriptable 中连接</a><p id="quick-status" role="status">配对链接生成后 10 分钟有效，只能用一次。</p></div><div id="pairing" hidden><p>这是旧版连接链接。复制下方信息，在 Scriptable 配对弹窗中粘贴。</p><button id="copy-pairing">复制只读配对信息</button><p id="pairing-status" role="status"></p><details id="pairing-fallback"><summary>手动复制配对信息</summary><textarea id="pairing-text" readonly aria-label="只读配对信息" spellcheck="false"></textarea></details></div><p id="pairing-missing">请在电脑“手机小组件”页面生成安装二维码，用 iPhone 相机扫码打开。已有连接只更新脚本时，可直接在 Scriptable 中运行。</p></section>
+  <section><span class="step">3</span><h2>添加桌面小组件</h2><p>在 Scriptable 选择尺寸预览，确认额度出现。长按手机桌面 → 编辑 / 添加小组件 → Scriptable → 选择尺寸。</p><p>长按新组件 → 编辑小组件 → Script 选择刚才导入的脚本。Parameter 留空即可，账户与顺序在电脑端调整。</p><div class="sizes"><span>小号<br><b>1 个账户</b></span><span>中号<br><b>2 个账户</b></span><span>大号<br><b>4 个账户</b></span></div></section>
+  <footer>只下载脚本不需要长期公网服务；持续获取额度需要电脑在线、地址可达。临时隧道更换地址后要重新配对。iOS 决定实际刷新时间。</footer>
+</main></body></html>

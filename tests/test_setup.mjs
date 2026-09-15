@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const ctx=vm.createContext({});vm.runInContext(fs.readFileSync(new URL('../web/setup-state.js',import.meta.url),'utf8'),ctx);
+const now=Date.now(),row={id:'one',status:'ok',lastSuccessAt:new Date(now).toISOString(),windows:[{remainingPercent:0}]};
+const packet={providers:[row],staleAfterSeconds:600},cloud={enabled:true,available:true,lastExportAt:new Date(now).toISOString()};
+const step=(options)=>JSON.parse(JSON.stringify(ctx.setupProgress({now,...options})));
+assert.equal(step({}).next,0);
+assert.equal(step({snapshot:{providers:[],enabledCount:1}}).next,1);
+assert.equal(step({snapshot:packet}).next,2);
+assert.equal(step({snapshot:packet,icloud:cloud}).next,3,'export cannot complete the phone step');
+assert.equal(step({snapshot:packet,icloud:cloud,phoneConfirmed:true}).next,-1);
+assert.equal(step({snapshot:packet,icloud:{...cloud,error:'blocked'},phoneConfirmed:true}).next,2);
+assert.equal(step({snapshot:{...packet,providers:[{...row,status:'error'}]},icloud:cloud}).next,1);
+assert.equal(step({snapshot:packet,icloud:cloud,now:now+700000}).next,1,'old data is not a fresh successful collection');
+assert.equal(step({snapshot:{providers:[{...row,windows:[],balances:[]}]}}).next,1,'unknown quota cannot pass collection');
+console.log('Setup gates passed: missing account, fresh success, failed export and explicit phone confirmation.');

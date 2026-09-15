@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f0"><meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="把 Codex、Claude 和 API Provider 的额度，放进口袋。">
+  <link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-192.png"><link rel="stylesheet" href="/style.css">
+  <title>额度口袋 · Quota Pocket</title>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="额度口袋首页"><span class="brand-icon">q<span>·</span></span><span>额度口袋<small>QUOTA POCKET</small></span></a>
+    <nav aria-label="主导航">
+      <button class="nav-item selected" data-view="overview"><span>◫</span>额度总览</button>
+      <button class="nav-item" data-view="widget"><span>▦</span>组件预览</button>
+      <button class="nav-item" data-view="setup"><span>⌘</span>一步步配置</button>
+    </nav>
+    <div class="side-note"><span class="tiny-dot"></span>只读 · 本地采集<p>额度来自平台。<br>不读取对话，不估算花费。</p></div>
+    <div class="side-foot"><span>v0.1.2 · 开源原型</span><button id="mode-toggle">查看演示</button></div>
+  </aside>
+  <main>
+    <header class="topbar"><span class="breadcrumb">我的空间 <span>/</span> <b id="crumb">额度总览</b></span><div class="top-actions"><span id="mode-badge" class="pill">本机模式</span><button id="connect-button" class="avatar" aria-label="连接访问凭证">Q</button></div></header>
+    <div class="page">
+      <div id="access-note" class="demo-note" role="status"><p>尚未连接本机管理端，账户数与采集周期暂不可知。点击右上角 Q 连接，或使用启动命令自动打开。</p><button id="connect-inline" type="button">连接管理端</button></div>
+      <div id="demo-note" class="demo-note" hidden><span>◌</span><p>正在预览示例数据，数字不代表你的真实账户。</p><button id="exit-demo">连接我的额度 ↗</button></div>
+      <section id="view-setup" class="view" hidden>
+        <div class="page-heading"><div><div class="eyebrow">开始使用</div><h1>一步步，把额度放到手机。</h1><p>准备好 Mac 和 iPhone。已完成的步骤会自动识别。</p></div></div>
+        <ol class="setup-progress" aria-label="配置步骤">
+          <li><button type="button" data-setup-step="0"><span>1</span>连接账户<small></small></button></li>
+          <li><button type="button" data-setup-step="1"><span>2</span>确认额度<small></small></button></li>
+          <li><button type="button" data-setup-step="2"><span>3</span>同步到 iCloud<small></small></button></li>
+          <li><button type="button" data-setup-step="3"><span>4</span>添加手机组件<small></small></button></li>
+        </ol>
+        <div class="setup-card">
+          <section data-setup-panel="0"><p class="step-caption">第 1 步 · 在 Mac 上操作</p><h2 tabindex="-1">先连接一个账户</h2><p>选你正在使用的账户，连接一个就能继续。以后可以随时添加。</p>
+            <div class="account-choices" role="group" aria-label="选择账户类型"><button type="button" data-setup-kind="codex">ChatGPT 订阅</button><button type="button" data-setup-kind="claude">Claude 订阅</button><button type="button" data-setup-kind="relay">中转 API 余额</button></div>
+            <div id="setup-subscriptions"></div>
+            <section id="setup-relay" hidden><h3>连接已有的 CC Switch</h3><p>先在 Mac 的 CC Switch 中添加中转账户，并确认它能查到余额。这里会读取已有配置，不需要再粘贴 API Key。</p><button type="button" id="setup-connect-relay" class="button primary">检测并连接 CC Switch</button><p id="setup-relay-status" role="status"></p></section>
+            <details id="setup-advanced-sources"><summary>其他工具与高级设置</summary></details>
+          </section>
+          <section data-setup-panel="1" hidden><p class="step-caption">第 2 步 · 在 Mac 上操作</p><h2 tabindex="-1">确认已经读到真实额度</h2><p>至少一个账户查询成功就能继续。报错账户可以稍后处理，旧数据不会被当作本次成功。</p><div id="setup-quotas" aria-live="polite"></div><button type="button" id="setup-refresh" class="button light">重新查询额度</button><p id="setup-quota-note" role="status"></p></section>
+          <section data-setup-panel="2" hidden><p class="step-caption">第 3 步 · Mac 和 iPhone 都需要</p><h2 tabindex="-1">用你自己的 iCloud 同步</h2><ol class="simple-checklist"><li>两台设备登录同一个 Apple 账户，开启 iCloud 云盘。</li><li>在 iPhone 安装并打开 Scriptable，允许使用 iCloud。</li><li>回到这里点击“启用 iCloud 同步”。</li></ol><div id="setup-icloud"></div><button type="button" id="setup-check-icloud" class="text-button">已经设置好了，重新检测</button></section>
+          <section data-setup-panel="3" hidden><p class="step-caption">第 4 步 · 在 iPhone 上操作</p><h2 tabindex="-1">把额度放到手机桌面</h2><ol class="simple-checklist"><li>打开 Scriptable，等待出现这个脚本：<strong id="setup-script-name" class="script-name"></strong>点开运行，确认账户与额度出现。</li><li>返回桌面，长按空白处 → 添加小组件 → 搜索 Scriptable。</li><li>选小号（单格）、中号（2 格）或大号（4 格），添加到桌面。</li><li>长按新组件 → 编辑小组件 → Script，选择上面的脚本。</li></ol><p>账户选择与排序：在手机脚本中点“调整展示账户”。每个额度窗口都会显示重置时间。</p><button type="button" class="text-button" data-view="widget">看看单格 / 2 格 / 4 格效果 →</button><label class="phone-confirm"><input type="checkbox" id="setup-phone-confirm"> 我已在 iPhone 小组件看到真实额度</label><p class="setup-hint">Mac 只能确认文件已写入，手机是否收到需要你确认。桌面首次更新可能需要等待。</p><details id="setup-background"><summary>希望 Mac 登录后自动采集？</summary><p>这是可选设置。先完成手机显示，再启用后台；如果系统拒绝 iCloud 文件访问，按提示处理权限。</p></details></section>
+          <div class="setup-footer"><button type="button" id="setup-back" class="button light">上一步</button><p id="setup-next-note" role="status"></p><button type="button" id="setup-next" class="button primary">下一步</button></div>
+        </div>
+      </section>
+      <section id="view-overview" class="view">
+        <div class="page-heading"><div><div class="eyebrow">LESS CHECKING. MORE CREATING.</div><h1>额度，一眼就够。</h1><p>你的 Codex、Claude 和 API 额度，都在这里。</p></div><button id="refresh" class="button light"><span class="refresh-icon">↻</span><span>刷新额度</span></button></div>
+        <div class="overview-stats"><div><span>已接入配置</span><strong id="stat-accounts">—</strong></div><div><span>需要关注</span><strong id="stat-attention">—</strong></div><div><span>更新方式</span><strong id="stat-interval">—</strong></div><div class="last-stat"><span>最后读取数据</span><strong id="stat-updated">—</strong></div></div>
+        <div class="content-grid"><div class="account-column">
+          <div class="section-heading"><h2>我的额度 <span id="provider-count">0</span></h2><div class="filters" role="group" aria-label="按工具筛选"><button class="active" data-filter="all">全部</button><button data-filter="codex">Codex</button><button data-filter="claude">Claude</button></div></div>
+          <div id="source-errors" class="source-errors"></div><div id="providers" class="providers" aria-live="polite"></div>
+          <div id="empty" class="empty-state" hidden><span class="empty-icon">◫</span><h3>让额度进入口袋</h3><p>连接已有的 CC Switch、Codex 或 Claude。<br>查询成功后，真实额度会出现在这里。</p><button class="button primary" data-view="sources">连接数据源 <span>↗</span></button><button class="text-button" id="try-demo">先看看效果</button></div>
+          <p class="data-note"><span>⊙</span> 百分比表示剩余额度。重置时间来自平台，查询失败时保留旧值并标记。</p>
+        </div><aside class="right-column"><div class="widget-teaser"><div class="teaser-title"><span>把额度带到桌面</span><span>↗</span></div><p>不用打开页面，<br>也能心里有数。</p><div class="mini-widget" id="mini-widget"></div><button class="button dark" data-view="widget">设置手机小组件 <span>→</span></button><small>iPhone · Scriptable · iCloud</small></div><div class="quiet-card"><span>↗</span><h3>已有工具，继续用。</h3><p>直接复用订阅额度与已有查询。API Key 和登录凭证留在电脑上。</p><button class="text-button" data-view="sources">管理数据源 →</button></div></aside></div>
+      </section>
+      <section id="view-widget" class="view" hidden>
+        <div class="page-heading"><div><div class="eyebrow">A LITTLE LESS FRICTION.</div><h1>抬眼，就知道。</h1><p>选一个尺寸，把关心的额度放到手机桌面。</p></div></div>
+        <div class="widget-layout"><div class="widget-studio"><div class="studio-toolbar"><div class="segmented"><button class="active" data-platform="ios">iPhone</button></div><span>外观示意</span></div><div class="phone"><div class="phone-top"><b>9:41</b><span>▮▮▮　▰</span></div><div class="phone-date">星期日，9 月 13 日</div><div class="phone-clock">09:41</div><div class="phone-widget" id="phone-widget"></div><span class="widget-caption">额度口袋</span><div class="app-dots"><span>✳</span><span>◈</span><span>▤</span><span>◉</span></div><div class="phone-dock"><span>◌</span><span>▣</span><span>◒</span><span>♫</span></div></div><div class="widget-controls"><label>尺寸<select id="widget-size" aria-label="尺寸"><option value="small">小号 · 单格</option><option value="medium" selected>中号 · 2 格</option><option value="large">大号 · 4 格</option></select></label><label>显示内容<select id="widget-filter"><option value="all">全部账户</option><option value="codex">Codex</option><option value="claude">Claude</option></select></label><label>外观<select id="widget-theme"><option value="light">浅色</option><option value="dark">深色</option></select></label></div><p id="widget-size-note" class="studio-note" aria-live="polite"></p><p class="studio-note">此处为浏览器外观示意；实际组件布局由手机宿主渲染。</p></div>
+        <div class="setup-panel"><section class="phone-selection-guide"><h2>展示账户，在手机上选</h2><p>在 Scriptable 运行额度脚本，选择“调整展示账户”，勾选并排序。手机会记住选择，电脑更新额度时不会覆盖。</p><p>小号每组 1 个，中号每组 2 个，大号每组 4 个，超出时按 15 分钟时间段轮换；桌面实际切换由 iOS 调度，不保证准时。下方手机图只预览电脑默认值，无法读取手机上的选择。</p></section><details class="desktop-selection"><summary>高级：首次默认展示</summary><section class="widget-selection"><h2>电脑默认展示</h2><p class="widget-selection-note">勾选并调整顺序。小号每组 1 个，中号每组 2 个，大号每组 4 个，超出时轮换；用于手机尚未保存选择时的默认值。不会覆盖手机保存的选择。</p><div class="widget-selection-actions"><button type="button" class="text-button" id="widget-select-all">全选</button><button type="button" class="text-button" id="widget-select-none">清空</button></div><div id="widget-accounts"></div><button type="button" class="button primary" id="save-widget-selection" disabled>保存到手机小组件</button><p id="widget-selection-status" class="widget-selection-note" role="status"></p></section></details><div class="section-kicker">三步，带走你的额度</div><h2 id="setup-title">添加到 iPhone 桌面</h2><div id="ios-steps"><section class="icloud-setup" aria-labelledby="icloud-title">
+  <div class="icloud-heading"><h3 id="icloud-title">通过 iCloud 同步</h3><span class="pill">Mac + iPhone 推荐</span></div>
+  <p>使用自己的 iCloud，无需服务器、HTTPS 地址或配对码。两台设备需登录同一个 Apple 账户，并开启 iCloud Drive。</p>
+  <p id="icloud-status" role="status">连接电脑管理端后可启用。</p>
+  <div class="icloud-actions"><button type="button" id="enable-icloud" class="button primary" disabled>启用 iCloud 同步</button><button type="button" id="disable-icloud" class="text-button" hidden>停止写入</button></div>
+  <details id="icloud-account-scope"><summary>高级：限制允许同步的账户</summary><p>默认同步所有已连接账户的额度，让手机自由选择。取消允许后，手机收到新快照就不再展示该账户；离线缓存可能暂时保留旧额度。</p><label class="scope-all"><input type="checkbox" id="icloud-scope-all" checked> 同步所有已连接账户（含以后新增）</label><div id="icloud-scope-list"></div><button type="button" id="save-icloud-scope" class="button light" disabled>保存同步范围</button><p id="icloud-scope-note" role="status"></p></details><div id="icloud-installed" hidden>
+    <p>手机中选择这个脚本：<strong id="icloud-script-name"></strong></p><p id="icloud-export-time"></p>
+    <details><summary>找不到脚本或额度没有更新？</summary><p>先在 iPhone 打开 Scriptable，并在系统设置中允许它使用 iCloud。确认两台设备的 Apple 账户相同、iCloud Drive 已开启且空间充足，然后等待文件同步。运行脚本可重新读取当前可用文件，但不能强制 iCloud 立即同步。</p><p id="icloud-local-path"></p></details>
+  </div>
+</section>
+<div class="setup-step"><b>1</b><div><h3>打开 iPhone 上的 Scriptable</h3><p>首次安装后打开一次，并允许使用 iCloud。</p></div></div>
+<div class="setup-step"><b>2</b><div><h3>在电脑启用同步</h3><p>点击“启用 iCloud 同步”。默认同步所有已连接账户的额度，等待手机中的脚本出现后运行一次，再在手机选展示账户。</p></div></div>
+<div class="setup-step"><b>3</b><div><h3>选择小组件脚本</h3><p>长按手机桌面 → 添加 Scriptable → 选择小 / 中 / 大尺寸 → 编辑小组件，选择上方显示的脚本。已有小组件也可以直接更换脚本。以后运行脚本选择“调整展示账户”即可。</p></div></div>
+</div><div id="android-steps" hidden><div class="setup-step"><b>1</b><div><h3>安装 KWGT 与 Tasker</h3><p>Tasker 负责带认证请求快照，KWGT 负责显示。首版提供配置步骤，未打包预设。</p></div></div><div class="setup-step"><b>2</b><div><h3>配置只读取数任务</h3><p>使用 HTTPS 地址和只读凭证，不把 Provider Key 复制到手机。</p><a class="button light" href="/downloads/android.md" download="Quota-Pocket-Android.md">↓ 下载 Android 配置指南</a> <a class="text-button" href="/downloads/tasker-format.js" download="tasker-format.js">下载格式化脚本 ↗</a></div></div><div class="setup-step"><b>3</b><div><h3>添加 KWGT 小组件</h3><p>按指南选择小 / 中 / 大公式，再拖动组件边框调整尺寸。首次设置需手动操作。</p></div></div></div>
+        <details class="https-fallback" hidden><summary>其他方式：HTTPS 连接 / Android</summary><a class="text-button" href="/downloads/Quota-Pocket.js" download="Quota Pocket.js">下载 HTTPS 模式脚本</a><div class="connection-box"><h3>扫码安装到手机 <span>只读</span></h3><p id="connection-hint">电脑会将已保存的连接放入二维码，手机扫码即可，无需输入地址。首次使用仍需配置可用的 HTTPS 入口。</p><button id="create-install" class="button primary">生成手机安装二维码</button><div id="install-share" hidden><img id="install-qr" alt="手机安装二维码"><p id="install-expiry"></p><button id="copy-install-link" class="button light">复制安装链接</button></div><button id="copy-connection" class="button light">手动复制连接信息</button><button id="revoke" class="text-button">撤销 HTTPS 手机凭证</button></div></details><div class="notice"><b>关于自动更新</b><p>缓存模式跟随 CC Switch 已有查询；新配置默认每 5 分钟独立查询。iCloud 同步与 iOS 组件刷新由系统调度，不能保证每 5 分钟更新。电脑休眠后保留上次额度，显示原始采集时间。</p></div></div></div>
+      </section>
+      <section id="view-sources" class="view" hidden>
+        <div class="page-heading"><div><div class="eyebrow">BRING WHAT YOU ALREADY USE.</div><h1>连接已有的工具。</h1><p>选择数据源，平台返回多少，就展示多少。</p></div></div>
+        <section class="runtime-panel"><h2>Mac 后台采集</h2><p id="runtime-status" role="status">连接管理端后显示运行状态。</p><p id="runtime-version"></p><div class="icloud-actions"><button id="service-start" type="button" class="button primary" disabled>启用后台与登录启动</button><button id="service-restart" type="button" class="button light" disabled>重启并启用后台</button><button id="service-disable" type="button" class="text-button" disabled>停止采集并禁用登录启动</button></div><p id="service-note">关闭浏览器不影响采集。停止后额度保留；重新运行启动命令可打开管理页。</p></section><div class="subscription-heading"><h2>连接我的订阅</h2><p>单独登录，Codex 桌面端继续使用 API Key 也不受影响。登录成功后自动开始读取额度。</p></div>
+        <div class="subscription-grid" id="subscription-connectors">
+          <section class="subscription-card" data-subscription="codex"><div class="subscription-title"><span class="source-logo codex-logo">◈</span><div><h3>ChatGPT 订阅</h3><small>读取 Codex 使用额度</small></div><span class="subscription-badge" id="subscription-codex-badge">未连接</span></div><p id="subscription-codex-status" role="status">请在电脑管理端连接。</p><div class="subscription-actions"><button type="button" class="button primary" data-subscription-start="codex">连接 ChatGPT 订阅</button><a id="subscription-codex-link" class="button light" target="_blank" rel="noreferrer" hidden>打开官方登录页 ↗</a><button type="button" class="text-button" data-subscription-cancel="codex" hidden>取消本次登录</button></div><p class="subscription-footnote">在这台电脑的浏览器完成授权。使用独立 Codex 登录目录。</p></section>
+          <section class="subscription-card" data-subscription="claude"><div class="subscription-title"><span class="source-logo claude-logo">✳</span><div><h3>Claude 订阅</h3><small>五小时、每周与模型额度</small></div><span class="subscription-badge" id="subscription-claude-badge">未连接</span></div><p id="subscription-claude-status" role="status">请在电脑管理端连接。</p><div class="subscription-actions"><button type="button" class="button primary" data-subscription-start="claude">连接 Claude 订阅</button><a id="subscription-claude-link" class="button light" target="_blank" rel="noreferrer" hidden>打开官方登录页 ↗</a><button type="button" class="text-button" data-subscription-cancel="claude" hidden>取消本次登录</button></div><div id="claude-code-entry" hidden><label for="claude-auth-code">官方页面若提供授权码，粘贴完整内容</label><input id="claude-auth-code" type="password" autocomplete="off" placeholder="授权码#校验信息"><button id="submit-claude-code" type="button" class="button light">完成 Claude 连接</button></div><p class="subscription-footnote">macOS 可能提示访问本次独立登录的钥匙串条目；不会读取现有 Claude Code 的默认凭证。</p></section>
+        </div><p class="subscription-note" id="subscription-note">连接成功后，去“手机小组件”选择要展示的订阅账户。安装 Codex CLI / Claude Code 后即可使用。</p>
+        <div class="subscription-heading"><h2>采集与同步设置</h2><p>选择需要采集的数据源，独立登录的订阅也可以暂时关闭采集。</p></div>
+        <form id="settings-form"><div class="sources-grid">
+          <label class="source-option"><span class="source-logo switch-logo">⇄</span><span><b>CC Switch</b><small>读取已有额度快照，或独立查询</small><em id="detect-cc-switch">只读连接本机数据库</em></span><input type="checkbox" name="cc-switch"><span class="toggle"></span></label>
+          <label class="source-option"><span class="source-logo codex-logo">◈</span><span><b>ChatGPT 订阅</b><small>官方 CLI · 额度窗口与重置时间</small><em id="detect-codex">可使用上方独立登录入口</em></span><input type="checkbox" name="codex"><span class="toggle"></span></label>
+          <label class="source-option"><span class="source-logo claude-logo">✳</span><span><b>Claude 订阅</b><small>OAuth · 五小时、每周与模型额度</small><em id="detect-claude">可使用上方独立登录入口</em></span><input type="checkbox" name="claude"><span class="toggle"></span></label>
+          <label class="source-option"><span class="source-logo bar-logo">▥</span><span><b>CodexBar</b><small>统一读取 Codex 与 Claude 订阅</small><em id="detect-codexbar">兼容已有订阅；独立登录可单独启用</em></span><input type="checkbox" name="codexbar"><span class="toggle"></span></label>
+        </div><div class="settings-detail cc-settings"><label>CC Switch 读取方式<select name="ccSwitchMode"><option value="independent">独立查询（兼容模式）</option><option value="snapshot">读取缓存（需 CC Switch 补丁）</option></select></label><div><p id="cc-mode-note" class="mode-note">缓存模式只读本地文件，不请求 Provider；官方版尚需添加导出补丁。</p><label id="cc-path-label">额度快照文件<input name="ccSwitchSnapshotPath" type="text" placeholder="~/.cc-switch/quota-pocket.json" autocomplete="off"></label></div></div><div class="settings-detail"><label>独立查询周期<select name="intervalSeconds"><option value="600">每 10 分钟</option><option value="300">每 5 分钟</option><option value="900">每 15 分钟</option><option value="60">每 1 分钟</option></select></label><div class="mobile-connection" hidden><span>HTTPS 连接（可选）</span><p>Mac + iPhone 可在“手机小组件”页面启用 iCloud，无需填写地址。</p><p id="mobile-connection-status">正在读取已保存的连接…</p><details id="mobile-address-settings"><summary>高级：设置或更换服务地址</summary><label>HTTPS 服务地址<input name="publicUrl" type="url" placeholder="https://your-device.example.com" autocomplete="off"><small>地址保存一次即可，扫码时自动传给手机。临时隧道换址后仍需重新配对；长期使用请配置固定入口。</small></label></details></div></div><div class="save-row"><button class="button primary" type="submit">保存并开始采集 <span>→</span></button><p id="settings-note">仅查询额度，不发起模型请求，不修改原工具配置。</p></div></form>
+        <div class="source-boundaries"><h3>哪些数据会出现？</h3><p>CC Switch 缓存模式：展示原工具已查询的 Provider 和订阅，不保证所有未启用查询的账户都有额度。独立查询模式：执行已开启的 GET 查询脚本；与 CC Switch 同时开启自动查询仍会重复请求。官方订阅：展示平台实际返回的窗口，字段缺失时显示未知。Claude 的普通 API Key 不能查询订阅额度。</p><p>没有可用登录时会明确提示；演示数据不会自动填入真实账户。</p></div>
+      </section>
+      <footer><span><span class="tiny-dot"></span> 少一次检查，多一点专注。</span><a href="https://github.com/steipete/CodexBar" target="_blank" rel="noreferrer">数据源研究：CodexBar ↗</a></footer>
+    </div>
+  </main>
+</div>
+<dialog id="connect-dialog"><form id="connect-form"><button class="dialog-close" type="button" aria-label="关闭">×</button><span class="brand-icon">q<span>·</span></span><h2>连接你的额度口袋</h2><p>输入本机管理凭证或手机只读凭证。Provider Key 不在这里填写。</p><label>访问凭证<input id="access-token" type="password" autocomplete="off" placeholder="粘贴访问凭证" required></label><button class="button primary" type="submit">连接设备 →</button><small>本机首次使用：运行 python3 server.py --open 自动连接。</small></form></dialog>
+<div id="toast" role="status" hidden></div>
+<script src="/vendor/qrcode.js" defer></script><script src="/setup-state.js" defer></script><script src="/app.js" defer></script><script src="/icloud.js" defer></script><script src="/runtime.js" defer></script><script src="/setup.js" defer></script>
+</body></html>

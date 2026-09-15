@@ -1,0 +1,13 @@
+<section class="icloud-setup" aria-labelledby="icloud-title">
+  <div class="icloud-heading"><h3 id="icloud-title">通过 iCloud 同步</h3><span class="pill">Mac + iPhone 推荐</span></div>
+  <p>使用自己的 iCloud，无需服务器、HTTPS 地址或配对码。两台设备需登录同一个 Apple 账户，并开启 iCloud Drive。</p>
+  <p id="icloud-status" role="status">连接电脑管理端后可启用。</p>
+  <div class="icloud-actions"><button type="button" id="enable-icloud" class="button primary" disabled>启用 iCloud 同步</button><button type="button" id="disable-icloud" class="text-button" hidden>停止写入</button></div>
+  <details id="icloud-account-scope"><summary>高级：限制允许同步的账户</summary><p>默认同步所有已连接账户的额度，让手机自由选择。取消允许后，手机收到新快照就不再展示该账户；离线缓存可能暂时保留旧额度。</p><label class="scope-all"><input type="checkbox" id="icloud-scope-all" checked> 同步所有已连接账户（含以后新增）</label><div id="icloud-scope-list"></div><button type="button" id="save-icloud-scope" class="button light" disabled>保存同步范围</button><p id="icloud-scope-note" role="status"></p></details><div id="icloud-installed" hidden>
+    <p>手机中选择这个脚本：<strong id="icloud-script-name"></strong></p><p id="icloud-export-time"></p>
+    <details><summary>找不到脚本或额度没有更新？</summary><p>先在 iPhone 打开 Scriptable，并在系统设置中允许它使用 iCloud。确认两台设备的 Apple 账户相同、iCloud Drive 已开启且空间充足，然后等待文件同步。运行脚本可重新读取当前可用文件，但不能强制 iCloud 立即同步。</p><p id="icloud-local-path"></p></details>
+  </div>
+</section>
+<div class="setup-step"><b>1</b><div><h3>打开 iPhone 上的 Scriptable</h3><p>首次安装后打开一次，并允许使用 iCloud。</p></div></div>
+<div class="setup-step"><b>2</b><div><h3>在电脑启用同步</h3><p>点击“启用 iCloud 同步”。默认同步所有已连接账户的额度，展示内容在手机选择。</p></div></div>
+<div class="setup-step"><b>3</b><div><h3>选择小组件脚本</h3><p>长按手机桌面 → 添加 Scriptable → 选择小 / 中 / 大尺寸 → 编辑小组件，选择上方显示的脚本。已有小组件也可以直接更换脚本。</p></div></div>

@@ -1,0 +1,21 @@
+.state/
+.env
+node_modules/
+__pycache__/
+*.pyc
+config.local.json
+output/
+.playwright-cli/
+
+# Local secrets and developer artifacts
+.env.*
+!.env.example
+.DS_Store
+*.log
+.venv/
+venv/
+.installer/
+.installer.lock
+.install-pending
+.install-complete
+Start Quota Pocket.command
