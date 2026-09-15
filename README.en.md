@@ -31,7 +31,38 @@ API keys, OAuth tokens, and login credentials stay on your Mac. iCloud snapshots
 
 You need macOS, Python 3.9+, and Node.js 20+ with npm. Your Mac and iPhone must use the same Apple Account with iCloud Drive enabled.
 
-**Prefer help from a local agent?** Copy the [agent installation prompt](AGENT-INSTALL.en.md) into a local tool such as Codex, Claude Code, or WorkBuddy that can operate your Mac. It can check dependencies, install the project, and open setup. You complete account authorization and iPhone actions yourself.
+<a id="agent-install"></a>
+
+**Prefer help from a local agent?** Copy the prompt below into Codex, Claude Code, WorkBuddy, or another local agent that can operate your Mac. It can check dependencies, install the project, and open setup. You complete account authorization and iPhone actions yourself.
+
+<details open>
+<summary>Installation prompt (copy directly, or click to collapse)</summary>
+
+```text
+Please install and start Quota Pocket on this Mac, through to opening its local configuration page.
+
+Project: https://github.com/Zssan12/quota-pocket
+Version: v0.1.3 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
+
+Quota Pocket collects AI account quotas on a Mac, writes an allowlisted snapshot to my own iCloud Drive, and displays it in an iPhone Scriptable widget. Credentials stay on the Mac.
+
+Please carry out these steps, rather than just giving instructions:
+1. Read README.en.md and install.sh / install.py. Follow the project's and this session's operating constraints.
+2. Check macOS, Python 3.9+, Node.js 20+, and npm. Reuse working tools. If tools are missing and Homebrew is installed, install only the missing tools. If Homebrew is absent, provide official installer links and explain the step I need to perform. Do not use sudo or modify Apple's system Python.
+3. Download the selected version into a separate directory, or use the local source directory I provided. Do not initialize or modify Git in an unrelated project. Do not delete or overwrite my existing source or account state.
+4. From the source directory, run: bash install.sh --source "$PWD"
+   It installs to ~/Library/Application Support/QuotaPocket and preserves accounts and the installation ID of an existing installation. Never delete .state to reinstall. This entry point does not upgrade an existing installation.
+5. Verify that the local service started and setup opened. If the port is occupied, identify the listener before acting; do not force-kill it. Do not put API keys, tokens, authenticated URLs, or real account information into chat or logs.
+6. Ask which quota source I want. When account authorization is needed, let me complete it in the local page. Do not enable every source automatically or read conversations. Check Codex CLI or Claude CLI only if the selected source requires it.
+7. Guide me through a successful quota query, enabling iCloud, running the dedicated script in Scriptable, and adding the Home Screen widget. Both devices must use the same Apple Account with iCloud Drive enabled. I perform the phone actions. Do not equate a Mac write with confirmed phone delivery.
+8. Use the installer-started process first. Automatic login startup is experimental; configure it only if I want it and verify macOS file permissions. Do not expose a public endpoint or deploy a sync server.
+
+Finish with the install location, startup result, how to reopen it, and my next page or phone action. Do not delete files or directories for cleanup.
+```
+
+</details>
+
+Do not paste keys or login credentials into the prompt. Complete account authorization in the local setup page.
 
 ### One-line install
 
@@ -136,7 +167,7 @@ The supported product route is Mac collection, iCloud sync, and iPhone Scriptabl
 
 ## Documentation and feedback
 
-- [Local-agent installation prompt](AGENT-INSTALL.en.md)
+- [Local-agent installation prompt](#agent-install)
 - [v0.1.3 release notes](RELEASE-NOTES.md#english)
 - [Connection troubleshooting (Chinese)](CONNECTIVITY.md)
 - [Widget refresh research (Chinese)](WIDGET-REFRESH-RESEARCH.md)
