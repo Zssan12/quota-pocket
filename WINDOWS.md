@@ -1,38 +1,60 @@
-# Windows → iCloud → iPhone
+# Windows 使用指南
 
-Windows 源码运行入口已加入；不是已完成全链路真机验收的 Windows 安装包。手机继续使用相同 Scriptable 脚本，包含账户选择、轮播、颜色及离线缓存。
+## 首次启动
 
-## 安装与启动
+准备 Python 3.9+、Node.js 20+、iCloud for Windows；电脑和 iPhone 使用同一 Apple 账户并开启 iCloud Drive。手机先打开一次 Scriptable 并允许 iCloud。
 
-1. 从 Microsoft Store 安装 Apple 的 iCloud，登录与 iPhone 相同的 Apple 账户，打开 iCloud Drive。手机安装、打开 Scriptable 并允许 iCloud。等待初始化结束。
-2. 安装 Python 3.9+（推荐受支持的新版本）。使用 CC Switch 独立查询还需要 Node.js 20+ 和本机 CC Switch 账户配置。
-3. 下载并解压仓库。在项目目录运行一次 `npm install --ignore-scripts` 安装查询脚本依赖。
-4. 双击 `start-windows.cmd`，自动打开本机管理页。首次数据源默认关闭；在“连接数据源”选择现有 CC Switch 独立查询，先确认一个中转账户余额和成功采集时间正确。
-5. “手机小组件”中启用 iCloud。脚本写入已存在的 Scriptable 容器；写入成功不是手机已收到。
-6. 手机打开 Scriptable，运行页面显示的脚本名称，选择账户。添加 Scriptable 桌面组件并选择此脚本。
+```powershell
+git clone https://github.com/Zssan12/quota-pocket.git
+cd quota-pocket
+npm ci --ignore-scripts
+.\start-windows.cmd
+```
 
-本版启动窗口须保持打开；Ctrl+C 停止采集。没有安装 Windows 计划任务或开机自启动。重新启动 Windows 后再次双击。已有服务时只打开管理页面，不重复采集。
+在打开的配置页连接数据源 → 确认额度 → 启用 iCloud。手机运行页面显示的脚本，再添加 Scriptable 小组件。
 
-## 路径
+中转余额需本机 CC Switch 已配置查询脚本。首次建议只接一个账户，确认电脑和手机的余额、币种、采集时间一致。
 
-默认目录为 `%USERPROFILE%\iCloudDrive\iCloud~dk~simonbs~Scriptable`，不附加 Mac 的 `Documents`。仅检查这个明确路径，不扫描整盘、不创建 iCloud 容器。
+## 日常使用与更新
 
-自定义位置：在项目目录新建 UTF-8 文本 `windows-icloud-path.txt`，只写实际 Scriptable 容器的完整路径，不加引号，例如 `D:\iCloudDrive\iCloud~dk~simonbs~Scriptable`。重启采集器生效。文件已列入 Git 忽略。
+双击 `start-windows.cmd`。采集时保留窗口，Ctrl+C 停止；Windows 重启后需再次启动，暂不提供开机自启动。
 
-也可在 PowerShell 中设置 `$env:QUOTA_POCKET_ICLOUD_DIR = '实际绝对路径'`，再执行 `py -3 -X utf8 server.py --open`。显式路径必须已存在，不可填普通 iCloud 根目录。路径覆盖不会迁移或删除旧云端文件。独立 Windows 安装生成新的安装 ID，保留 Mac 的脚本和快照。
+更新前先停止采集，在原项目目录运行：
 
-## 验证范围
+```powershell
+git pull --ff-only
+npm ci --ignore-scripts
+.\start-windows.cmd
+```
 
-用户 2026-09-15～17 的验证：Windows 25H2 / iCloud 15.9.60.0 / PowerShell 7.6.5，Scriptable 容器文件正常网络连续两轮、手机蜂窝网络一轮读取了对应唯一 writeId 和 payload。未提供手机读取时间，不能计算延迟；锁屏、Windows 重启、桌面自动刷新未测。该证据只证明文件链路。
+如果 Git 提示本地改动冲突，先保留改动再处理，不要覆盖 `.state`。从 Mac 转移源码时也不要复制 Mac 的 `.state` 或 `node_modules`。
 
-本次开发在 Mac 上运行 Windows 路径、UTF-8 中文快照、字段白名单、脚本生成和文件锁分支模拟测试。待 Windows 实测：服务启动、真实中转余额、独立 Claude/ChatGPT 授权与续期、云端脚本发现及手机桌面自动更新。不要把有代码入口当作所有 Provider 已适配；尤其 npm 安装的 CLI 包装脚本与原生 CLI 可执行文件行为可能不同。
+## 找不到 iCloud 文件夹
 
-真实验收：选一个账户，记录电脑成功采集时间、金额、快照 generatedAt，再在手机比较同账户、同币种、同采集时间。更新一次后重复比较，确认不是旧缓存。不要发送凭证文件；`.state/` 留在电脑本地，不能放入 iCloud。Windows 的 chmod 不是 POSIX 权限隔离，状态目录访问由 Windows 账户和 NTFS ACL 管理。
+默认路径：
+
+```text
+%USERPROFILE%\iCloudDrive\iCloud~dk~simonbs~Scriptable
+```
+
+等待 iCloud 初始化结束。如果使用自定义位置，在项目目录创建 UTF-8 文件 `windows-icloud-path.txt`，只写 **Scriptable 容器完整路径**，不加引号，例如：
+
+```text
+D:\iCloudDrive\iCloud~dk~simonbs~Scriptable
+```
+
+重启采集器后生效。不要填写普通 iCloud 根目录，也不要自行加上 Mac 的 `Documents`。更换位置不会删除旧文件。
 
 ## Clash / Mihomo Fake-IP 兼容
 
-如果余额卡片提示“Provider 域名解析到代理 Fake-IP”，在连接数据源设置中选择 CC Switch 独立查询，勾选“代理 Fake-IP 兼容（198.18.0.0/15）”，保存后刷新。设置保存在此电脑的 CC Switch 数据源配置，重启仍有效。
+看到“Provider 域名解析到代理 Fake-IP”时，在 **连接数据源 → CC Switch 独立查询** 勾选 **代理 Fake-IP 兼容**，保存后刷新。
 
-新安装默认关闭。仅放行域名解析所得的该合成网段，HTTPS、同源、禁止凭证 URL、内网拦截仍有效；不修改 CC Switch 数据库或脚本。取消勾选并保存后，后续查询恢复拒绝；之前成功的余额可能仍显示为旧数据，不代表新的查询成功。
+默认关闭。只放行域名解析得到的 `198.18.0.0/15`；HTTPS、同源和其他内网限制不变。设置重启后保留，关闭后恢复拒绝；之前的余额可能仍以旧数据显示。
 
-旧配置没有 allowProxyFakeIp 字段时，仍支持当前进程的 QUOTA_POCKET_FAKE_IP=1；页面显示实际生效值。用户保存开关后，布尔值优先，显式关闭不会被环境变量重新开启。新安装已有默认 false，请使用页面开关。环境变量回退现在只适用于 CC Switch 独立查询，不作用于 Claude 或本地快照读取。
+旧配置未保存开关时兼容 `QUOTA_POCKET_FAKE_IP=1`。保存后的开关优先于环境变量，且只影响 CC Switch 独立查询。
+
+## 手机没更新
+
+先确认电脑采集时间变新，再在 Scriptable 手动运行对应脚本。第二轮应读到新的采集时间，余额不一定变化。手动运行已更新而桌面未变，通常是 iOS 尚未重新绘制。
+
+Windows 基础文件同步（含手机蜂窝网络）和真实中转余额查询已有实测；CI 覆盖 Windows 启动与文件测试。订阅登录、重启恢复及最新版本完整手机链路仍需验收。文件送达不代表桌面准时刷新。

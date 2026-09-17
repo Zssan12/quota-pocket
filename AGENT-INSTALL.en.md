@@ -1,29 +1,22 @@
-# Install with a local agent
+# Install with a local AI assistant
 
-[简体中文](AGENT-INSTALL.md) · **English**
+[简体中文](AGENT-INSTALL.md) · [Home](README.en.md)
 
-Copy the prompt below into a local agent that can operate your Mac, such as Codex, Claude Code, or WorkBuddy. A web chat without local access cannot perform the installation for you. The prompt uses this project’s repository. If you already downloaded the source, replace the project URL with its absolute local directory path.
+Copy this to an assistant that can operate your computer. Complete account authorization and iPhone setup yourself.
 
 ```text
-Please install and start Quota Pocket on this Mac, through to opening its local configuration page.
+Install and start Quota Pocket on this computer:
+https://github.com/Zssan12/quota-pocket
 
-Project: https://github.com/Zssan12/quota-pocket
-Version: v0.2.0 preview. If the tag does not exist, tell me and let me choose an available version. Do not invent a repository address.
+Read README.en.md and, on Windows, WINDOWS.md. Check Python 3.9+ and Node.js 20+; reuse existing tools and explain any missing prerequisites.
 
-Quota Pocket collects AI account quotas on a Mac, writes an allowlisted snapshot to my own iCloud Drive, and displays it in an iPhone Scriptable widget. Credentials stay on the Mac.
+Get main in a separate directory without overwriting existing accounts or projects.
+Mac: bash install.sh --source "$PWD"
+Windows: npm ci --ignore-scripts, then start-windows.cmd.
+An existing Mac installation is not automatically upgraded; check MAC.md.
 
-Please carry out these steps, rather than just giving instructions:
-1. Read README.en.md and install.sh / install.py. Follow the project's and this session's operating constraints.
-2. Check macOS, Python 3.9+, Node.js 20+, and npm. Reuse working tools. If tools are missing and Homebrew is installed, install only the missing tools. If Homebrew is absent, provide official installer links and explain the step I need to perform. Do not use sudo or modify Apple's system Python.
-3. Download the selected version into a separate directory, or use the local source directory I provided. Do not initialize or modify Git in an unrelated project. Do not delete or overwrite my existing source or account state.
-4. From the source directory, run: bash install.sh --source "$PWD"
-   It installs to ~/Library/Application Support/QuotaPocket and preserves accounts and the installation ID of an existing installation. Never delete .state to reinstall. This entry point does not upgrade an existing installation.
-5. Verify that the local service started and setup opened. If the port is occupied, identify the listener before acting; do not force-kill it. Do not put API keys, tokens, authenticated URLs, or real account information into chat or logs.
-6. Ask which quota source I want. When account authorization is needed, let me complete it in the local page. Do not enable every source automatically or read conversations. Check Codex CLI or Claude CLI only if the selected source requires it.
-7. Guide me through a successful quota query, enabling iCloud, running the dedicated script in Scriptable, and adding the Home Screen widget. Both devices must use the same Apple Account with iCloud Drive enabled. I perform the phone actions. Do not equate a Mac write with confirmed phone delivery.
-8. Use the installer-started process first. Automatic login startup is experimental; configure it only if I want it and verify macOS file permissions. Do not expose a public endpoint or deploy a sync server.
+Verify the local setup page opens. Let me choose sources and authorize through official pages. Guide me through confirming quotas, enabling my iCloud, running the generated iPhone Scriptable script and adding a widget. Compare collection timestamps; a computer write is not proof of phone delivery.
 
-Finish with the install location, startup result, how to reopen it, and my next page or phone action. Do not delete files or directories for cleanup.
+Do not print or upload keys, tokens, .state or credential-bearing URLs. Do not change the original tools' configuration, expose a public service or delete files/directories. Configure login startup only if requested.
+Finish with the startup result, how to reopen it and what I need to do next.
 ```
-
-Do not paste account secrets into this prompt. Complete authorization in the project's local management page.
