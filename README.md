@@ -12,6 +12,10 @@ macOS · iCloud Drive · iPhone Scriptable · MIT
 
 Quota Pocket 是一个开源的 AI 额度查看工具：Mac 负责读取中转 API 余额和订阅额度，通过你自己的 iCloud Drive，同步到 iPhone 的 Scriptable 小组件。无需部署服务器，也无需让手机连接 Mac 的网络地址。
 
+## Windows 预览版
+
+已增加 Windows 本地启动与 iCloud 容器路径适配，复用 iPhone Scriptable。按 [Windows 使用与验证指南](WINDOWS.md) 安装依赖后，双击 `start-windows.cmd`。基础云文件链路已由用户验证；真实额度全链路、Windows 订阅登录及后台自启动尚未验收。
+
 ## 可以做什么
 
 - **多个订阅账号**：Codex、Claude 均可逐个添加账号，独立保存凭证、查询额度，并分别备注、停用或重新授权。

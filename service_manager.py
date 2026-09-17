@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Per-user collector lifecycle. No file or directory deletion."""
 import argparse
-import fcntl
 import json
 import os
 from pathlib import Path
@@ -9,6 +8,9 @@ import plistlib
 import shutil
 import subprocess
 import sys
+
+if sys.platform != 'win32':
+    import fcntl
 import time
 import urllib.request
 import urllib.error
@@ -106,6 +108,8 @@ def launch_agent(root=ROOT, python=None, environment=None):
 
 
 def status(root=ROOT):
+    if sys.platform != 'darwin':
+        return {'loaded': False, 'enabled': False, 'details': ['当前平台请使用启动脚本运行采集器。']}
     check_owned(root)
     loaded = run('print', service_name())
     details = [l.strip() for l in loaded.stdout.splitlines()
@@ -226,6 +230,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['install', 'status', 'stop', 'start', 'disable', 'restart'])
     args = parser.parse_args()
+    if sys.platform != 'darwin':
+        parser.exit(1, '后台服务管理目前仅支持 macOS；Windows 请使用 start-windows.cmd。\n')
     try:
         if args.action == 'status':
             print(json.dumps(status(), ensure_ascii=False))

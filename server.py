@@ -5,7 +5,6 @@ import concurrent.futures
 import copy
 import datetime as dt
 import hashlib
-import fcntl
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -18,6 +17,9 @@ import shutil
 import signal
 import subprocess
 import sys
+
+if sys.platform != 'win32':
+    import fcntl
 import threading
 import time
 import urllib.parse
@@ -51,7 +53,14 @@ def instance_lock(directory):
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     handle = (directory / 'collector.lock').open('a')
     try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if sys.platform == 'win32':
+            import msvcrt
+            if handle.tell() == 0:
+                handle.write('0'); handle.flush()
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         handle.close()
         raise ValueError('此状态目录已有采集器运行。') from None
@@ -80,13 +89,13 @@ def subscription_name(value):
 def write_private(path, value):
     data = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False)
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, 'w') as stream:
+    with os.fdopen(fd, 'w', encoding='utf-8') as stream:
         stream.write(data)
     os.chmod(path, 0o600)
 
 
 def load_json(path, fallback):
-    try: return json.loads(path.read_text())
+    try: return json.loads(path.read_text(encoding='utf-8'))
     except (ValueError, OSError): return copy.deepcopy(fallback)
 
 
@@ -814,7 +823,7 @@ def main():
     parser.add_argument('--open', action='store_true', help='Open local management with an access token in the URL fragment')
     parser.add_argument('--pair', action='store_true', help='Print the read-only device connection JSON locally')
     args = parser.parse_args()
-    if args.state_dir == str(ROOT / '.state') and service_manager.runtime_root().resolve() != ROOT.resolve():
+    if sys.platform == 'darwin' and args.state_dir == str(ROOT / '.state') and service_manager.runtime_root().resolve() != ROOT.resolve():
         installed_state = service_manager.state_root(ROOT)
         if installed_state != ROOT / '.state':
             os.execv(sys.executable, [sys.executable, str(service_manager.runtime_root() / 'server.py'), *sys.argv[1:]])

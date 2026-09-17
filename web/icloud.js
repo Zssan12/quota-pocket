@@ -29,10 +29,10 @@ function renderICloud() {
   $('#icloud-local-path').textContent = state ? '电脑上的文件夹：' + state.directory : '';
   $('#icloud-export-time').textContent = state?.lastExportAt ? '电脑最后写入：' + new Date(state.lastExportAt).toLocaleString('zh-CN') + '。此时间不代表手机已收到。' : '';
   $('#icloud-status').textContent = demo ? '演示模式不会写入 iCloud。连接真实数据后即可启用。'
-    : !local ? '请在 Mac 上打开电脑管理页面启用 iCloud。'
+    : !local ? '请在电脑上打开电脑管理页面启用 iCloud。'
     : !state ? '请用电脑管理凭证连接后重试。'
     : state.error ? '写入失败：' + state.error
-    : !state.available ? '未找到 Scriptable 的 iCloud 文件夹。请先在 iPhone 打开 Scriptable、允许 iCloud，并确认 Mac 已开启 iCloud Drive。'
+    : !state.available ? '未找到 Scriptable 的 iCloud 文件夹。请先在 iPhone 打开 Scriptable、允许 iCloud，并确认 电脑已开启 iCloud Drive。'
     : state.enabled ? '已写入 Scriptable 的 iCloud 文件夹，等待 Apple 同步到手机。'
     : state.lastExportAt ? '已停止写入。手机和 iCloud 中保留上次文件，旧数据会标记过期。'
     : '已找到 Scriptable 文件夹。同步额度后，在手机勾选展示账户；登录凭证留在电脑。';

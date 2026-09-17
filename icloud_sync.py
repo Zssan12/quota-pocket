@@ -23,11 +23,27 @@ class ICloudError(ValueError):
     pass
 
 
+def scriptable_documents(system=None, home=None, environment=None):
+    """Resolve exact container paths only; never create or scan a cloud root."""
+    environment = os.environ if environment is None else environment
+    override = environment.get('QUOTA_POCKET_ICLOUD_DIR')
+    if override:
+        path = Path(override).expanduser()
+        if not path.is_absolute() or not path.is_dir():
+            raise ICloudError('QUOTA_POCKET_ICLOUD_DIR 必须是已存在的 Scriptable 容器绝对路径。')
+        return path
+    system = platform.system() if system is None else system
+    if system == 'Windows':
+        home = Path(home) if home is not None else Path.home()
+        return home / 'iCloudDrive/iCloud~dk~simonbs~Scriptable'
+    return SCRIPTABLE_DOCUMENTS
+
+
 def _private_json(path, value):
     data = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False)
     temporary = path.with_name(path.name + '.tmp')
     fd = os.open(str(temporary), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, 'w') as stream:
+    with os.fdopen(fd, 'w', encoding='utf-8') as stream:
         stream.write(data)
         stream.flush()
         os.fsync(stream.fileno())
@@ -165,7 +181,7 @@ class ICloudSync:
         self.state_dir = Path(state_dir)
         self.state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.template_path = Path(template_path)
-        self.documents = Path(documents) if documents is not None else SCRIPTABLE_DOCUMENTS
+        self.documents = Path(documents) if documents is not None else scriptable_documents()
         self.state_path = self.state_dir / 'icloud.json'
         self.lock = threading.RLock()
         self.state = self._load_state(device_name)
@@ -176,12 +192,12 @@ class ICloudSync:
             self.documents = Path(documents).resolve()
             self.state['documentsDirectory'] = str(self.documents)
             _private_json(self.state_path, self.state)
-        elif saved_documents:
+        elif saved_documents and not os.environ.get('QUOTA_POCKET_ICLOUD_DIR'):
             self.documents = Path(saved_documents)
 
     def _load_state(self, device_name):
         try:
-            saved = json.loads(self.state_path.read_text())
+            saved = json.loads(self.state_path.read_text(encoding='utf-8'))
         except (OSError, ValueError, TypeError):
             saved = {}
         identifier = saved.get('deviceId')
@@ -191,7 +207,7 @@ class ICloudSync:
             identifier = str(uuid.uuid4())
         name = saved.get('deviceName')
         if not isinstance(name, str) or not name.strip():
-            name = device_name or platform.node() or socket.gethostname() or 'Mac'
+            name = device_name or platform.node() or socket.gethostname() or 'Computer'
         enabled = saved.get('enabled', False)
         # Invalid state must fail closed; strings such as "false" are truthy.
         if not isinstance(enabled, bool):
@@ -230,7 +246,7 @@ class ICloudSync:
             try:
                 if path.is_symlink() or not path.is_file() or path.stat().st_size > 1024:
                     return None
-                value = json.loads(path.read_text())
+                value = json.loads(path.read_text(encoding='utf-8'))
                 if not isinstance(value, dict) or value.get('schemaVersion') != 1:
                     return None
                 if value.get('installationId') != self.state['deviceId']:
