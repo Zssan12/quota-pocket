@@ -127,6 +127,8 @@ def validate_query(url, base=None, local=False, allow_fake_ip=False):
         raise SourceError('Provider 查询不允许访问本地、内网或保留地址。')
     try:
         addresses = socket.getaddrinfo(target[1], target[2], type=socket.SOCK_STREAM)
+        if addresses and literal is None and not allow_fake_ip and all(ipaddress.ip_address(a[4][0]) in ipaddress.ip_network('198.18.0.0/15') for a in addresses):
+            raise SourceError('Provider 域名解析到代理 Fake-IP。若使用 Clash/Mihomo Fake-IP 模式，请在 CC Switch 设置中启用“代理 Fake-IP 兼容”；其他内网地址仍会被拒绝。')
         def accepted(address):
             ip = ipaddress.ip_address(address)
             synthetic = isinstance(ip, ipaddress.IPv4Address) and ip in ipaddress.ip_network('198.18.0.0/15')
@@ -137,8 +139,8 @@ def validate_query(url, base=None, local=False, allow_fake_ip=False):
         raise SourceError('无法解析 Provider 地址，请检查网络。')
 
 
-def fetch_json(url, headers=None, base=None, local=False):
-    validate_query(url, base=base, local=local, allow_fake_ip=os.environ.get('QUOTA_POCKET_FAKE_IP') == '1')
+def fetch_json(url, headers=None, base=None, local=False, allow_fake_ip=False):
+    validate_query(url, base=base, local=local, allow_fake_ip=allow_fake_ip)
     clean = {'Accept': 'application/json', 'User-Agent': 'QuotaPocket/0.1'}
     for k, v in (headers or {}).items():
         if not isinstance(k, str) or not isinstance(v, str) or '\n' in k + v or '\r' in k + v:
@@ -316,6 +318,13 @@ def cc_snapshot(config):
     return result
 
 
+def cc_fake_ip(config):
+    # An explicit persisted choice always wins; legacy installations may use env.
+    if 'allowProxyFakeIp' in config:
+        return config['allowProxyFakeIp'] is True
+    return os.environ.get('QUOTA_POCKET_FAKE_IP') == '1'
+
+
 def cc_switch_query(config):
     path = Path(config.get('path', '~/.cc-switch/cc-switch.db')).expanduser().resolve()
     if not path.is_file():
@@ -350,7 +359,7 @@ def cc_switch_query(config):
                 raise SourceError('第一版仅执行只读 GET 额度查询。')
             if not variables['baseUrl']:
                 raise SourceError('请在 CC Switch 的查询配置中填写 Base URL，以校验请求来源。')
-            result = fetch_json(req.get('url', ''), req.get('headers'), base=variables['baseUrl'])
+            result = fetch_json(req.get('url', ''), req.get('headers'), base=variables['baseUrl'], allow_fake_ip=cc_fake_ip(config))
             return cc_result(sandbox(code, variables, 'extract', result), item)
         except SourceError as error:
             item.update(status='error', error=str(error))

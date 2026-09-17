@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-from adapters import ADAPTERS, ROOT, SourceError, cc_snapshot_path, now, stamp
+from adapters import cc_fake_ip, ADAPTERS, ROOT, SourceError, cc_snapshot_path, now, stamp
 from icloud_sync import ICloudError, ICloudSync, quota_projection
 from hosted_sync import HostedSync, SyncError
 from subscription_auth import SubscriptionLogins, LoginError
@@ -67,7 +67,7 @@ def instance_lock(directory):
     return handle
 
 DEFAULT_CONFIG = {'intervalSeconds': 300, 'publicUrl': '', 'widgetProviderIds': None, 'icloudProviderIds': None, 'sources': {
-    'cc-switch': {'enabled': False, 'mode': 'independent'}, 'codexbar': {'enabled': False, 'mode': 'cli'},
+    'cc-switch': {'enabled': False, 'mode': 'independent', 'allowProxyFakeIp': False}, 'codexbar': {'enabled': False, 'mode': 'cli'},
     'codex': {'enabled': False}, 'claude': {'enabled': False}}}
 
 
@@ -386,6 +386,7 @@ class Store:
             return {'intervalSeconds': self.config['intervalSeconds'], 'publicUrl': self.config.get('publicUrl', ''),
                     'ccSwitchMode': self.config['sources']['cc-switch']['mode'],
                     'ccSwitchSnapshotPath': str(cc_snapshot_path(self.config['sources']['cc-switch'])),
+                    'ccSwitchAllowProxyFakeIp': cc_fake_ip(self.config['sources']['cc-switch']),
                     'ccSwitchSnapshotAvailable': cc_snapshot_path(self.config['sources']['cc-switch']).is_file(),
                     'sources': {k: {'enabled': any(v.get('enabled') for _, v in self.subscription_entries(k)) if k in SUBSCRIPTION_NAMES and self.subscription_entries(k) else bool(self.config['sources'][k].get('enabled')),
                                     'managed': bool(self.subscription_entries(k)) if k in SUBSCRIPTION_NAMES else False} for k in ADAPTERS},
@@ -401,6 +402,8 @@ class Store:
         sources = data.get('sources')
         if not isinstance(sources, dict) or set(sources) - set(ADAPTERS): raise ValueError('数据源配置无效。')
         if any(not isinstance(value, bool) for value in sources.values()): raise ValueError('数据源开关无效。')
+        if 'ccSwitchAllowProxyFakeIp' in data and type(data['ccSwitchAllowProxyFakeIp']) is not bool:
+            raise ValueError('代理 Fake-IP 兼容必须为布尔值。')
         mode = data.get('ccSwitchMode', self.config['sources']['cc-switch']['mode'])
         if mode not in ('snapshot', 'independent'): raise ValueError('CC Switch 读取模式无效。')
         snapshot_path = data.get('ccSwitchSnapshotPath', str(cc_snapshot_path(self.config['sources']['cc-switch'])))
@@ -413,6 +416,10 @@ class Store:
             if p.scheme != 'https' or not p.hostname or p.username or p.password or p.query or p.fragment or p.path not in ('', '/'):
                 raise ValueError('手机连接地址应为不含路径和凭证的 HTTPS 地址。')
         with self.lock:
+            if 'ccSwitchAllowProxyFakeIp' in data:
+                if cc_fake_ip(self.config['sources']['cc-switch']) != data['ccSwitchAllowProxyFakeIp']:
+                    self.source_retries.pop('cc-switch', None)
+                self.config['sources']['cc-switch']['allowProxyFakeIp'] = data['ccSwitchAllowProxyFakeIp']
             self.config['intervalSeconds'] = interval
             self.config['publicUrl'] = url
             self.config['sources']['cc-switch'].update(mode=mode, snapshotPath=snapshot_path)

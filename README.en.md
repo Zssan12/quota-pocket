@@ -135,7 +135,7 @@ Subscription login uses isolated directories and does not change your existing t
 
 Some providers are incompatible with the current read-only query constraints: HTTPS, same-origin GET requests, and no redirects. Unknown values remain unknown. Balances retain their original currencies and are not summed across currencies.
 
-If you explicitly use a Fake-IP proxy, set `QUOTA_POCKET_FAKE_IP=1` when first launching or installing login startup. This permits domain resolution to synthetic proxy addresses, not localhost, literal IP addresses, or other private addresses. It is disabled by default. Preserve the setting in the environment when restarting a background service that needs it.
+For Clash/Mihomo Fake-IP mode, enable the explicit Fake-IP compatibility checkbox under CC Switch independent queries. It defaults to off and persists across restarts. A saved false overrides the environment. Legacy configurations without this field can still use `QUOTA_POCKET_FAKE_IP=1` for CC Switch only. HTTPS, same-origin and private-address checks remain enforced.
 
 ## Multiple subscription accounts
 

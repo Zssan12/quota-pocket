@@ -136,7 +136,7 @@ start / restart 启用登录启动并通过 launchd 运行当前版本；disable
 
 部分中转站不支持当前只读查询约束：仅 HTTPS、同源 GET、拒绝重定向。未知额度显示未知，余额保留原币种，不将不同币种相加。
 
-如本人明确使用 Fake-IP 代理，可在首次启动或安装后台时设置 `QUOTA_POCKET_FAKE_IP=1`。它仅允许域名解析到代理合成地址，不放行 localhost、直接 IP 或其他内网地址；默认关闭。已有后台启用该选项时需在重启的环境中保留。
+使用 Clash/Mihomo Fake-IP 模式时，在 CC Switch 独立查询设置中启用“代理 Fake-IP 兼容”。默认关闭，保存后重启仍保留，显式关闭优先于环境变量。旧配置未保存开关时仍兼容 `QUOTA_POCKET_FAKE_IP=1`，仅作用于 CC Switch。详见 [代理说明](WINDOWS.md#clash--mihomo-fake-ip-兼容)。
 
 ## 多个订阅账号
 

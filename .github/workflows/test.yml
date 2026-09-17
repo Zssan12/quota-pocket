@@ -32,6 +32,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: python server.py --help
+      - run: python -m unittest discover -s tests -p test_proxy_fake_ip.py -v
       - run: python -m unittest discover -s tests -p test_windows_icloud.py -v
       - run: python -m unittest discover -s tests -p test_icloud.py -v
       - run: node tests/test_scriptable.mjs
