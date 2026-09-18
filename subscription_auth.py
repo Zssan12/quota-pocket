@@ -118,7 +118,7 @@ def stop_process(process):
 
 
 def read_claude_login_credentials(directory):
-    """Called only after this app's explicit login, never from a quota poll."""
+    """Read this app's isolated login profile, at login or when its token expires."""
     path = Path(directory) / '.credentials.json'
     if path.is_file():
         data = json.loads(path.read_text())
@@ -186,6 +186,79 @@ _credential_locks = {}
 _credential_guard = threading.Lock()
 
 
+def claude_refresh_command(executable):
+    # /status is a local built-in, not an inference prompt. Keep interactive
+    # semantics: --print would not provide the same command behavior.
+    return [executable, '--setting-sources', '', '--settings', '{"disableAllHooks":true}',
+            '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}',
+            '--tools', '', '/status']
+
+
+def touch_claude_cli_auth(executable, directory):
+    """Let Claude perform its own renewal; discard all terminal output."""
+    import fcntl
+    import pty
+    import select
+    import struct
+    import termios
+    work = directory.parent / 'quota-refresh'
+    if work.is_symlink(): raise LoginError('Claude 独立续期目录无效。')
+    work.mkdir(mode=0o700, exist_ok=True)
+    master, slave = pty.openpty()
+    process = None
+    try:
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 140, 0, 0))
+        env = isolated_env('claude', directory)
+        env['TERM'] = 'xterm-256color'
+        process = subprocess.Popen(claude_refresh_command(executable), cwd=work,
+            env=env, stdin=slave, stdout=slave, stderr=slave, start_new_session=True)
+        os.close(slave)
+        slave = None
+        deadline = time.monotonic() + 35
+        while process.poll() is None and time.monotonic() < deadline:
+            ready, _, _ = select.select([master], [], [], .25)
+            if ready:
+                try:
+                    if not os.read(master, 65536): break
+                except OSError: break
+        # No prompt responses, login, project tools, or raw output forwarding.
+        # Success is determined by the persisted token, never the process code.
+    finally:
+        stop_process(process)
+        os.close(master)
+        if slave is not None: os.close(slave)
+
+
+def refresh_claude_with_cli(path, oauth):
+    # The macOS path has been verified with the official CLI. Other platforms
+    # and legacy credentials retain HTTP renewal until separately validated.
+    directory = Path(path).parent / 'cli'
+    if sys.platform != 'darwin' or directory.is_symlink() or not directory.is_dir(): return None
+    executable = shutil.which('claude')
+    if not executable: return None
+    def fresh(value):
+        expires = value.get('expiresAt')
+        return (isinstance(expires, (int, float)) and not isinstance(expires, bool)
+                and expires > (time.time()+60)*1000 and bool(value.get('accessToken'))
+                and 'user:profile' in value.get('scopes', []))
+    try:
+        owned = read_claude_login_credentials(directory)
+        # Recover a successful CLI rotation even if the previous collector
+        # stopped before copying it into the app's private credential file.
+        if fresh(owned) and owned['expiresAt'] > oauth.get('expiresAt', 0): return owned
+        if owned.get('refreshToken') != oauth.get('refreshToken'):
+            return None  # A legacy HTTP rotation may have left the CLI copy stale.
+        try:
+            touch_claude_cli_auth(executable, directory)
+        except (OSError, subprocess.SubprocessError):
+            pass  # The CLI may have persisted a rotation before exiting/timeout.
+        updated = read_claude_login_credentials(directory)
+        if fresh(updated): return updated
+    except (OSError, ValueError, subprocess.SubprocessError, LoginError):
+        pass
+    raise LoginError('官方 Claude CLI 未能续期额度口袋的独立凭证；凭证已保留。请检查网络、CLI 版本或专属钥匙串访问权限后重试。')
+
+
 def managed_claude_token(path):
     with _credential_guard: lock = _credential_locks.setdefault(str(path), threading.Lock())
     with lock:
@@ -196,7 +269,7 @@ def managed_claude_token(path):
         expires = oauth.get('expiresAt')
         if isinstance(expires, (int, float)) and expires <= (time.time()+60)*1000:
             if not oauth.get('refreshToken'): raise LoginError('Claude 登录已过期，请重新连接订阅。')
-            oauth = refresh_claude(oauth)
+            oauth = refresh_claude_with_cli(path, oauth) or refresh_claude(oauth)
             private_json(path, {'claudeAiOauth':oauth})
         return oauth['accessToken']
 
