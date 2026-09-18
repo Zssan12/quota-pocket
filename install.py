@@ -49,9 +49,9 @@ def prepare_runtime(source, root):
     stage.mkdir(parents=True, mode=0o700)
     for item in source.glob('*.py'):
         shutil.copy2(item, stage / item.name)
-    for name in ('sandbox.mjs', 'sync_crypto.mjs', 'package.json', 'package-lock.json'):
+    for name in ('sandbox.mjs', 'package.json', 'package-lock.json'):
         shutil.copy2(source / name, stage / name)
-    for name in ('web', 'widgets', 'vendor'):
+    for name in ('web', 'widgets'):
         shutil.copytree(source / name, stage / name)
     print('[3/4] 安装查询组件，首次运行需要下载依赖……', flush=True)
     npm = shutil.which('npm')

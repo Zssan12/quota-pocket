@@ -19,7 +19,9 @@ Credentials stay on your computer. No server, domain or VPN pairing required. Qu
 
 ## Get started
 
-Install [Python 3.9+](https://www.python.org/downloads/), [Node.js 20+](https://nodejs.org/) and [Scriptable](https://scriptable.app/) on iPhone. Enable iCloud Drive on both devices with the same Apple Account. Windows also needs iCloud for Windows.
+**Install [Scriptable from the App Store](https://apps.apple.com/app/scriptable/id1405459188) on your iPhone first. It is required** to run the quota script and display the Home Screen widget. Open it once and allow iCloud access.
+
+Your computer needs [Python 3.9+](https://www.python.org/downloads/) and [Node.js 20+](https://nodejs.org/). Use the same Apple Account with iCloud Drive enabled on both devices. Windows also requires iCloud for Windows.
 
 ### Mac
 
@@ -33,7 +35,7 @@ bash install.sh --source "$PWD"
 
 The local setup page opens automatically. You can close the terminal after installation. After restarting your Mac, open `Start Quota Pocket.command` in `~/Library/Application Support/QuotaPocket`.
 
-This command does not upgrade an existing installation. See [Mac operations and upgrades (Chinese)](MAC.md).
+This command does not upgrade an existing installation. See [Mac operations and upgrades (Chinese)](docs/MAC.md).
 
 ### Windows preview
 
@@ -44,14 +46,14 @@ npm ci --ignore-scripts
 .\start-windows.cmd
 ```
 
-Keep the collector window open. See the [Windows guide (Chinese)](WINDOWS.md) for updates, custom iCloud paths and proxy support.
+Keep the collector window open. See the [Windows guide (Chinese)](docs/WINDOWS.md) for updates, custom iCloud paths and proxy support.
 
-Without Git, [download the ZIP](https://github.com/Zssan12/quota-pocket/archive/refs/heads/main.zip), extract it and run the corresponding installation command inside the project. Or [ask a local AI assistant to install it](AGENT-INSTALL.en.md).
+Without Git, [download the ZIP](https://github.com/Zssan12/quota-pocket/archive/refs/heads/main.zip), extract it and run the corresponding installation command inside the project. Or [ask a local AI assistant to install it](docs/AGENT-INSTALL.en.md).
 
 ## Connect your iPhone
 
 1. Connect an account on the computer and confirm a successful quota query. Subscription authorization requires the corresponding Codex / Claude CLI.
-2. Open Scriptable on iPhone once and enable iCloud access.
+2. [Download Scriptable](https://apps.apple.com/app/scriptable/id1405459188) on iPhone, open it once and allow iCloud access.
 3. Enable iCloud in the computer's widget setup page and note the generated script name.
 4. Run that script on iPhone, choose accounts, then add a Scriptable Home Screen widget pointing to it.
 
@@ -64,7 +66,7 @@ Without Git, [download the ZIP](https://github.com/Zssan12/quota-pocket/archive/
 
 ## More
 
-[Mac operations](MAC.md) · [Windows guide](WINDOWS.md) · [Connectivity](CONNECTIVITY.md) · [Validation](VALIDATION.md)
+[Mac operations](docs/MAC.md) · [Windows guide](docs/WINDOWS.md) · [Connectivity](docs/CONNECTIVITY.md) · [Documentation and development](docs/README.md)
 
 Run `npm ci --ignore-scripts` and `npm test` before contributing. Reports should include OS versions, steps and redacted errors. Never upload `.state`, keys or account snapshots. The app UI is currently in Chinese.
 

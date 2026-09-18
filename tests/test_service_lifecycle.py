@@ -93,7 +93,7 @@ class ServiceLifecycle(unittest.TestCase):
 
     def test_runtime_migration_preserves_identity_and_does_not_reset_later_state(self):
         source=self.root/'source'; source.mkdir()
-        for name in ('sandbox.mjs','sync_crypto.mjs','package.json','package-lock.json','server.py'):
+        for name in ('sandbox.mjs','package.json','package-lock.json','server.py'):
             (source/name).write_text('{}')
         state=source/'.state'; state.mkdir()
         (state/'access.json').write_text(json.dumps({'admin':'TEST_ONLY'}))

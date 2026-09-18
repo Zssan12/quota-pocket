@@ -28,7 +28,6 @@ import webbrowser
 
 from adapters import cc_fake_ip, ADAPTERS, ROOT, SourceError, cc_snapshot_path, now, stamp
 from icloud_sync import ICloudError, ICloudSync, quota_projection
-from hosted_sync import HostedSync, SyncError
 from subscription_auth import SubscriptionLogins, LoginError
 import service_manager
 
@@ -156,7 +155,6 @@ class Store:
         self.phone_refresh = load_json(self.directory / 'phone-refresh.json', {})
         self.pairings = {}  # Short-lived, single-use codes; never persisted or logged.
         self.subscriptions = SubscriptionLogins(self.directory / 'subscriptions', self.connect_subscription)
-        self.hosted = HostedSync(self.directory, lambda: self.snapshot(widget_only=True))
         self.icloud = ICloudSync(self.directory, ROOT / 'widgets/Quota-Pocket.js')
         if self.icloud.status()['enabled']:
             self.export_icloud()
@@ -164,10 +162,7 @@ class Store:
     def export_icloud(self):
         # Callers never hold Store.lock here. ICloudSync serializes first, then
         # invokes the supplier so a queued old export cannot capture stale state.
-        try:
-            return self.icloud.export(self.icloud_snapshot)
-        finally:
-            self.hosted.wake()
+        return self.icloud.export(self.icloud_snapshot)
 
     def icloud_snapshot(self):
         with self.lock:
@@ -213,7 +208,6 @@ class Store:
         # Same lock order as export_icloud: never hold Store.lock while waiting
         # for ICloudSync.lock, whose exporter may be waiting for Store.lock.
         result['icloud'] = self.icloud.status()
-        result['hosted'] = self.hosted.status()
         result['serviceSupported'] = sys.platform == 'darwin' and self.directory.resolve() == (ROOT / '.state').resolve()
         if result['serviceSupported']:
             try:
@@ -653,9 +647,6 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/runtime':
                 if not self.authorized(admin=True): return self.send(403, {'error': '需要电脑管理权限。'})
                 return self.send(200, self.store.runtime_status())
-            if path == '/api/hosted':
-                if not self.authorized(admin=True): return self.send(403, {'error': '需要电脑管理权限。'})
-                return self.send(200, self.store.hosted.status())
             if path == '/api/widget-settings':
                 if not self.authorized(admin=True): return self.send(403, {'error': '只有管理端可以选择小组件账户。'})
                 return self.send(200, self.store.widget_settings())
@@ -733,21 +724,6 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(202, {'accepted': True, 'action': body['action']})
             except (ValueError, OSError):
                 return self.send(400, {'error': '后台操作未启动，请检查配置和目录权限。'})
-        if path in ('/api/hosted', '/api/hosted/pair'):
-            try:
-                if path == '/api/hosted/pair':
-                    return self.send(200, self.store.hosted.pair())
-                size = int(self.headers.get('Content-Length', '0'))
-                if not 1 <= size <= 1000 or not self.headers.get('Content-Type', '').startswith('application/json'):
-                    raise ValueError()
-                body = json.loads(self.rfile.read(size))
-                if not isinstance(body, dict) or set(body) != {'enabled'}:
-                    raise ValueError()
-                return self.send(200, self.store.hosted.configure(body['enabled']))
-            except SyncError as error:
-                return self.send(400, {'error': str(error)})
-            except (ValueError, TypeError):
-                return self.send(400, {'error': '同步设置无效。'})
         if path.startswith('/api/subscriptions/'):
             parts = path.split('/')
             if len(parts) != 5 or parts[3] not in ('codex','claude') or parts[4] not in ('start','cancel','finish','update'):
@@ -874,7 +850,6 @@ def main():
         parser.error('端口已占用，请使用其他 --port 或检查现有服务。')
     server.store = store
     server.daemon_threads = True
-    store.hosted.start()
     threading.Thread(target=store.loop, daemon=True).start()
     print('Quota Pocket: ' + url, flush=True)
     print('Preview: ' + url + '?demo=1', flush=True)
@@ -888,7 +863,6 @@ def main():
     except KeyboardInterrupt: pass
     finally:
         store.stop.set()
-        store.hosted.close()
         store.subscriptions.close()
         # Finish an in-flight export before a replacement process can write.
         with store.refresh_lock:

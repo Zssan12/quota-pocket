@@ -41,9 +41,9 @@ def stage_runtime(root):
     # into the code bundle. State is migrated once, then remains authoritative.
     for path in root.glob('*.py'):
         shutil.copy2(path, destination / path.name)
-    for name in ('sandbox.mjs', 'sync_crypto.mjs', 'package.json', 'package-lock.json'):
+    for name in ('sandbox.mjs', 'package.json', 'package-lock.json'):
         shutil.copy2(root / name, destination / name)
-    for name in ('web', 'widgets', 'vendor', 'node_modules'):
+    for name in ('web', 'widgets', 'node_modules'):
         if (root / name).is_dir():
             shutil.copytree(root / name, destination / name, dirs_exist_ok=True)
     old_state, new_state = root / '.state', destination / '.state'

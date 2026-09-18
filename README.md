@@ -19,7 +19,9 @@ Mac / Windows 采集 → 你的 iCloud Drive → iPhone Scriptable 小组件
 
 ## 开始使用
 
-准备 [Python 3.9+](https://www.python.org/downloads/)、[Node.js 20+](https://nodejs.org/)，以及 iPhone 上的 [Scriptable](https://scriptable.app/)。电脑和手机需登录同一 Apple 账户并开启 iCloud Drive；Windows 还需安装 iCloud for Windows。
+**iPhone 必须先安装 [Scriptable（App Store 下载）](https://apps.apple.com/app/scriptable/id1405459188)。** 它负责运行额度脚本和显示桌面小组件，安装后打开一次，并允许使用 iCloud。
+
+电脑需 [Python 3.9+](https://www.python.org/downloads/) 和 [Node.js 20+](https://nodejs.org/)。电脑和手机使用同一 Apple 账户并开启 iCloud Drive；Windows 还需安装 iCloud for Windows。
 
 ### Mac
 
@@ -33,7 +35,7 @@ bash install.sh --source "$PWD"
 
 自动打开本地配置页。安装后可关闭终端；重启电脑后双击安装目录 `~/Library/Application Support/QuotaPocket` 中的 `Start Quota Pocket.command`。
 
-已有安装不会被此命令自动升级，详见 [Mac 后台与升级](MAC.md)。
+已有安装不会被此命令自动升级，详见 [Mac 后台与升级](docs/MAC.md)。
 
 ### Windows（预览版）
 
@@ -44,14 +46,14 @@ npm ci --ignore-scripts
 .\start-windows.cmd
 ```
 
-采集时保持启动窗口打开。更新、iCloud 路径和代理问题见 [Windows 指南](WINDOWS.md)。
+采集时保持启动窗口打开。更新、iCloud 路径和代理问题见 [Windows 指南](docs/WINDOWS.md)。
 
-没有 Git？[下载 ZIP](https://github.com/Zssan12/quota-pocket/archive/refs/heads/main.zip) 并解压，在项目目录执行对应安装命令。也可以[让本地 AI 助手帮你安装](AGENT-INSTALL.md)。
+没有 Git？[下载 ZIP](https://github.com/Zssan12/quota-pocket/archive/refs/heads/main.zip) 并解压，在项目目录执行对应安装命令。也可以[让本地 AI 助手帮你安装](docs/AGENT-INSTALL.md)。
 
 ## 连接手机
 
 1. 在电脑配置页连接账户，确认余额或订阅额度查询成功。订阅授权需相应的 Codex / Claude CLI。
-2. iPhone 打开一次 Scriptable，允许使用 iCloud。
+2. iPhone [下载 Scriptable](https://apps.apple.com/app/scriptable/id1405459188)，安装后打开一次，允许使用 iCloud。
 3. 电脑进入“手机小组件”，启用 iCloud，记下生成的脚本名称。
 4. 手机运行该脚本、选择账户，再添加 Scriptable 桌面组件并选中它。
 
@@ -64,7 +66,7 @@ npm ci --ignore-scripts
 
 ## 更多
 
-[Mac 运维](MAC.md) · [Windows 指南](WINDOWS.md) · [同步排查](CONNECTIVITY.md) · [验证记录](VALIDATION.md)
+[Mac 运维](docs/MAC.md) · [Windows 指南](docs/WINDOWS.md) · [同步排查](docs/CONNECTIVITY.md) · [文档与开发](docs/README.md)
 
 贡献前运行 `npm ci --ignore-scripts` 和 `npm test`。反馈请附系统版本、步骤和脱敏错误，不要上传 `.state`、密钥或账户快照。
 

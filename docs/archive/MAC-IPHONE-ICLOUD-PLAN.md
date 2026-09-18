@@ -1,5 +1,7 @@
 # Mac + iCloud + iPhone 当前方案
 
+> 历史记录，内容对应当时版本，不作为当前安装或支持范围说明。请从[项目首页](../../README.md)开始。
+
 更新：2026-09-15。
 
 唯一数据链路为 Mac 采集 → 字段白名单 → 用户 iCloud Drive → iPhone Scriptable。凭证仅在 Mac。发布范围以此链路为准。

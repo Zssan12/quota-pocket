@@ -2,7 +2,7 @@
 
 ## 首次启动
 
-准备 Python 3.9+、Node.js 20+、iCloud for Windows；电脑和 iPhone 使用同一 Apple 账户并开启 iCloud Drive。手机先打开一次 Scriptable 并允许 iCloud。
+准备 Python 3.9+、Node.js 20+、iCloud for Windows；电脑和 iPhone 使用同一 Apple 账户并开启 iCloud Drive。iPhone 必须先[下载安装 Scriptable](https://apps.apple.com/app/scriptable/id1405459188)，打开一次并允许使用 iCloud。
 
 ```powershell
 git clone https://github.com/Zssan12/quota-pocket.git

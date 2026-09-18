@@ -45,7 +45,7 @@ This remains a preview. Users must authorize their real accounts on the official
 
 本版为 Pre-release。macOS 登录后台文件权限仍需实机验收，iCloud 传输和 iOS 桌面刷新不能保证固定周期。最新轮换逻辑已有模拟测试，仍需真机视觉确认。安装入口不会自动升级已有版本。页面和小组件目前使用中文，文档可切换中英文。
 
-从 [README](README.md) 开始安装。反馈问题时请提供系统版本与脱敏的复现步骤，不要提交凭证或真实账户快照。
+从 [README](../README.md) 开始安装。反馈问题时请提供系统版本与脱敏的复现步骤，不要提交凭证或真实账户快照。
 
 <a id="english"></a>
 
@@ -68,4 +68,4 @@ The first public preview: collect AI account balances and subscription quotas on
 
 This is a pre-release. macOS file permissions for login startup still need device validation. iCloud delivery and iOS Home Screen refresh do not have guaranteed intervals. The latest rotation logic has mock coverage but still needs visual confirmation on an iPhone. The installer does not upgrade existing installations. The UI and widgets are currently in Chinese; documentation is available in both languages.
 
-Start with the [English README](README.en.md). Include OS versions and sanitized reproduction steps in bug reports; never attach credentials or real account snapshots.
+Start with the [English README](../README.en.md). Include OS versions and sanitized reproduction steps in bug reports; never attach credentials or real account snapshots.
