@@ -162,8 +162,22 @@ def refresh_claude(oauth):
         if 'user:profile' not in updated.get('scopes', []): raise LoginError('Claude 授权缺少额度读取权限，请重新连接订阅。')
         return updated
     except urllib.error.HTTPError as error:
-        if error.code in (400, 401, 403): raise LoginError('Claude 订阅授权已失效，请在电脑端重新连接。')
-        raise LoginError('Claude 登录续期服务暂不可达，稍后重试。')
+        # A gateway/Cloudflare 403 does not prove the refresh token was revoked.
+        # Inspect bounded OAuth codes only; never forward raw server bodies.
+        try:
+            payload = json.loads(error.read(65536))
+            code = payload.get('error') if isinstance(payload, dict) else None
+        except (OSError, ValueError):
+            code = None
+        if error.code in (400, 401) and code == 'invalid_grant':
+            raise LoginError('Claude 订阅授权已失效，请在电脑端重新连接。')
+        if error.code == 403:
+            raise LoginError('Claude 续期请求被服务端拒绝（HTTP 403），可能是网络出口或网关拦截；不能据此判断授权失效。凭证已保留，请检查代理与网络后重试。')
+        if error.code == 429:
+            raise LoginError('Claude 续期请求受到限流（HTTP 429），请稍后重试。')
+        if error.code in (400, 401):
+            raise LoginError('Claude 续期请求未获接受（HTTP %s），请检查登录接口兼容性；现有凭证已保留。' % error.code)
+        raise LoginError('Claude 登录续期服务暂不可达（HTTP %s），稍后重试。' % error.code)
     except (OSError, ValueError, TypeError): raise LoginError('Claude 登录续期失败，稍后重试或重新连接。')
 
 
