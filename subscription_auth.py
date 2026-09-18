@@ -144,10 +144,11 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def refresh_claude(oauth):
-    body = urllib.parse.urlencode({'grant_type':'refresh_token', 'refresh_token':oauth['refreshToken'],
-                                 'client_id':'9d1c250a-e61b-44d9-88ed-5944d1962f5e'}).encode()
+    body = json.dumps({'grant_type':'refresh_token', 'refresh_token':oauth['refreshToken'],
+                       'client_id':'9d1c250a-e61b-44d9-88ed-5944d1962f5e',
+                       'scope':' '.join(oauth['scopes'])}).encode('utf-8')
     request = urllib.request.Request('https://platform.claude.com/v1/oauth/token', data=body,
-                                    headers={'Content-Type':'application/x-www-form-urlencoded', 'Accept':'application/json'})
+                                    headers={'Content-Type':'application/json', 'Accept':'application/json'})
     try:
         with urllib.request.build_opener(NoRedirect()).open(request, timeout=20) as response:
             raw = response.read(1_000_001)

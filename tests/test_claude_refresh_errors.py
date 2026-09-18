@@ -37,3 +37,20 @@ class ClaudeRefreshErrors(unittest.TestCase):
 
     def test_unknown_400_does_not_assert_revocation(self):
         self.assertNotIn('授权已失效',self.failure(400,b'{"error":"invalid_request"}'))
+
+    def test_refresh_matches_cli_json_contract_and_saves_rotation(self):
+        root=workspace();path=root/'credentials.json'
+        oauth={'accessToken':'TEST_OLD','refreshToken':'TEST_REFRESH','expiresAt':0,'scopes':['user:profile','user:inference']}
+        auth.private_json(path,{'claudeAiOauth':oauth})
+        def send(request, timeout):
+            self.assertEqual(request.full_url,'https://platform.claude.com/v1/oauth/token')
+            self.assertEqual(request.get_header('Content-type'),'application/json')
+            body=json.loads(request.data)
+            self.assertEqual(body,{'grant_type':'refresh_token','refresh_token':'TEST_REFRESH','client_id':'9d1c250a-e61b-44d9-88ed-5944d1962f5e','scope':'user:profile user:inference'})
+            return io.BytesIO(json.dumps({'access_token':'TEST_NEW','refresh_token':'TEST_ROTATED','expires_in':3600}).encode())
+        opener=MagicMock();opener.open.side_effect=send
+        with patch.object(auth.urllib.request,'build_opener',return_value=opener):
+            self.assertEqual(auth.managed_claude_token(path),'TEST_NEW')
+        saved=json.loads(path.read_text())['claudeAiOauth']
+        self.assertEqual(saved['refreshToken'],'TEST_ROTATED')
+        self.assertGreater(saved['expiresAt'],time.time()*1000)
